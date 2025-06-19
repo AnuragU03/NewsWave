@@ -49,8 +49,8 @@ interface NewsDataIOResponse {
   totalResults?: number;
   results?: NewsDataIOResult[];
   nextPage?: string;
-  code?: string; 
-  message?: string; 
+  code?: string;
+  message?: string;
 }
 
 // Mediastack specific interfaces
@@ -59,12 +59,12 @@ interface MediaStackArticle {
   title: string;
   description: string;
   url: string;
-  source: string; 
+  source: string;
   image: string | null;
   category: string;
   language: string;
-  country: string; 
-  published_at: string; 
+  country: string;
+  published_at: string;
 }
 
 interface MediaStackResponse {
@@ -86,10 +86,10 @@ interface MediaStackResponse {
 interface GNewsArticle {
   title: string;
   description: string;
-  content: string; 
+  content: string;
   url: string;
   image: string | null;
-  publishedAt: string; 
+  publishedAt: string;
   source: {
     name: string;
     url: string;
@@ -121,11 +121,24 @@ export class NewsService {
     return "news media";
   }
 
+  private sortArticlesByDate(articles: Article[]): Article[] {
+    return articles.sort((a, b) => {
+      const dateA = new Date(a.publishedAt);
+      const dateB = new Date(b.publishedAt);
+
+      if (isNaN(dateA.getTime()) && isNaN(dateB.getTime())) return 0;
+      if (isNaN(dateA.getTime())) return 1; // a is invalid, b is valid, so b comes first (newer)
+      if (isNaN(dateB.getTime())) return -1; // b is invalid, a is valid, so a comes first (newer)
+
+      return dateB.getTime() - dateA.getTime(); // Sort descending (newest first)
+    });
+  }
+
   async fetchNews(params: NewsQueryParams): Promise<Article[]> {
     try {
       const newsDataArticles = await this.tryNewsData(params);
       if (newsDataArticles.length > 0) {
-        return newsDataArticles;
+        return newsDataArticles; // Already sorted by tryNewsData
       }
       console.log('Newsdata.io returned no articles or failed, trying Mediastack...');
     } catch (error) {
@@ -134,11 +147,11 @@ export class NewsService {
           throw error;
       }
     }
-    
+
     try {
       const mediaStackArticles = await this.tryMediaStack(params);
       if (mediaStackArticles.length > 0) {
-        return mediaStackArticles;
+        return mediaStackArticles; // Already sorted by tryMediaStack
       }
       console.log('Mediastack returned no articles or failed, trying GNews...');
     } catch (error) {
@@ -151,24 +164,24 @@ export class NewsService {
     try {
       const gnewsArticles = await this.tryGNews(params);
       if (gnewsArticles.length > 0) {
-        return gnewsArticles;
+        return gnewsArticles; // Already sorted by tryGNews
       }
       console.log('GNews returned no articles or failed.');
     } catch (error) {
       console.error('Error fetching from GNews:', error);
        if (error instanceof Error && (error.message.includes('API key') || error.message.includes('configured or available'))) {
-          throw error; 
+          throw error;
       }
     }
 
     console.warn('All news APIs (Newsdata.io, Mediastack, GNews) failed or returned no articles.');
-    return []; 
+    return [];
   }
 
   private async tryNewsData(queryParams: NewsQueryParams): Promise<Article[]> {
-    const newsDataSettings = apiConfig.news.newsdata; 
+    const newsDataSettings = apiConfig.news.newsdata;
     if (!newsDataSettings) {
-        throw new Error("Newsdata.io API configuration missing."); 
+        throw new Error("Newsdata.io API configuration missing.");
     }
     const apiKey = this.apiRotator.getNextAvailableKey('newsdata', newsDataSettings.keys);
 
@@ -179,7 +192,7 @@ export class NewsService {
     const params = new URLSearchParams({
       apikey: apiKey,
       image: '1',
-      language: 'en', 
+      language: 'en',
     });
 
     let newsdataCategoryParam = queryParams.category?.toLowerCase();
@@ -194,7 +207,7 @@ export class NewsService {
     if (queryParams.query) {
       params.append('q', queryParams.query);
     }
-    
+
     try {
       const response = await fetch(`${newsDataSettings.baseUrl}/news?${params.toString()}`);
       const data: NewsDataIOResponse = await response.json();
@@ -202,7 +215,7 @@ export class NewsService {
 
       if (!response.ok || data.status === 'error') {
         let errorMessage = `Newsdata.io API error: Status ${response.status}.`;
-        
+
         if (data.results && typeof data.results === 'object' && 'message' in (data.results as any) ) {
             errorMessage = `Newsdata.io API error: ${(data.results as { message: string }).message}`;
         } else if (data.message) {
@@ -215,32 +228,34 @@ export class NewsService {
             throw new Error(`Newsdata.io API key issue: ${errorMessage}. Please check NEWSDATA_API_KEY or your API plan.`);
         }
         console.warn(`Newsdata.io returned non-key error, allowing fallback: ${errorMessage}`);
-        return []; 
+        return [];
       }
-      
+
       if (!data.results || data.results.length === 0) {
         return [];
       }
 
-      return data.results.slice(0, 21).map((article) => ({
+      const articles = data.results.slice(0, 21).map((article) => ({
         id: article.article_id || article.link,
         title: article.title || 'No title available',
         summary: article.description || article.content || 'No summary available',
         imageUrl: article.image_url || `https://placehold.co/600x400.png`,
         source: article.source_id || 'Unknown source',
-        category: queryParams.displayCategory, 
-        country: queryParams.displayCountry, 
+        category: queryParams.displayCategory,
+        country: queryParams.displayCountry,
         publishedAt: article.pubDate,
         url: article.link,
         aiHint: this.generateAiHint(queryParams.displayCategory, article.title || ""),
         originalProvider: 'newsdata.io',
       }));
+      return this.sortArticlesByDate(articles);
     } catch (error) {
       console.error('Exception during Newsdata.io fetch or processing:', error);
       if (error instanceof Error && error.message.includes("API key issue")) {
         throw error;
       }
-      throw new Error(`Failed to fetch from Newsdata.io: ${error instanceof Error ? error.message : String(error)}`);
+      // Do not re-throw general errors here to allow fallback
+      return []; // Return empty array to allow fallback
     }
   }
 
@@ -257,8 +272,9 @@ export class NewsService {
 
     const params = new URLSearchParams({
       access_key: apiKey,
-      limit: '25', 
-      languages: 'en', 
+      limit: '25',
+      languages: 'en',
+      sort: 'published_desc', // Ask Mediastack to sort
     });
 
     if (queryParams.category && queryParams.category.toLowerCase() !== 'all' && queryParams.category.toLowerCase() !== 'general') {
@@ -273,7 +289,7 @@ export class NewsService {
     if (queryParams.query) {
       params.append('keywords', queryParams.query);
     }
-    
+
     try {
       const response = await fetch(`${mediaStackSettings.baseUrl}/news?${params.toString()}`);
       const data: MediaStackResponse = await response.json();
@@ -287,13 +303,13 @@ export class NewsService {
         console.warn(`Mediastack returned non-key error: ${data.error.message}`);
         return [];
       }
-      
+
       if (!data.data || data.data.length === 0) {
         return [];
       }
 
-      return data.data.slice(0, 21).map((article, index) => ({
-        id: article.url || `${article.source}_${index}_${new Date().getTime()}`, 
+      const articles = data.data.slice(0, 21).map((article, index) => ({
+        id: article.url || `${article.source}_${index}_${new Date().getTime()}`,
         title: article.title || 'No title available',
         summary: article.description || 'No summary available',
         imageUrl: article.image || `https://placehold.co/600x400.png`,
@@ -305,12 +321,15 @@ export class NewsService {
         aiHint: this.generateAiHint(queryParams.displayCategory, article.title || ""),
         originalProvider: 'mediastack.com',
       }));
+      // Mediastack can sort with `published_desc`, but we sort again to be sure and consistent.
+      return this.sortArticlesByDate(articles);
     } catch (error) {
       console.error('Exception during Mediastack fetch or processing:', error);
       if (error instanceof Error && error.message.includes("API key issue")) {
-        throw error; 
+        throw error;
       }
-      throw new Error(`Failed to fetch from Mediastack: ${error instanceof Error ? error.message : String(error)}`);
+      // Do not re-throw general errors here to allow fallback
+      return []; // Return empty array to allow fallback
     }
   }
 
@@ -337,28 +356,27 @@ export class NewsService {
     if (!apiKey) {
       throw new Error('No GNews API key is configured or available. Please add GNEWS_API_KEY to your .env file.');
     }
-    
-    // GNews uses 'token' for API key
-    const params = new URLSearchParams({ token: apiKey, lang: 'en', max: '25' });
+
+    const params = new URLSearchParams({ token: apiKey, lang: 'en', max: '25', sortby: 'publishedAt' }); // Ask GNews to sort
 
     let endpoint = `${gnewsSettings.baseUrl}/top-headlines`;
 
     if (queryParams.query) {
       params.append('q', queryParams.query);
       endpoint = `${gnewsSettings.baseUrl}/search`;
-    } else { // Only use topic and country for top-headlines
+    } else {
       if (queryParams.category && queryParams.category.toLowerCase() !== 'all') {
         const gnewsTopic = this.gnewsCategoryMap[queryParams.category.toLowerCase()] || 'general';
         params.append('topic', gnewsTopic);
       } else {
-         params.append('topic', 'general'); // Default topic for GNews if no specific category or 'all'
+         params.append('topic', 'general');
       }
 
       if (queryParams.country && queryParams.country.toLowerCase() !== 'all' && queryParams.country.toLowerCase() !== 'global') {
         params.append('country', queryParams.country.toLowerCase());
       }
     }
-    
+
     try {
       const response = await fetch(`${endpoint}?${params.toString()}`);
       const data: GNewsResponse = await response.json();
@@ -373,30 +391,33 @@ export class NewsService {
         console.warn(`GNews returned non-key error, allowing fallback: ${errorMessage}`);
         return [];
       }
-      
+
       if (!data.articles || data.articles.length === 0) {
         return [];
       }
 
-      return data.articles.slice(0, 21).map((article, index) => ({
+      const articles = data.articles.slice(0, 21).map((article, index) => ({
         id: article.url || `${article.source.name}_${index}_${new Date().getTime()}`,
         title: article.title || 'No title available',
         summary: article.description || article.content || 'No summary available',
         imageUrl: article.image || `https://placehold.co/600x400.png`,
         source: article.source.name || 'Unknown source',
-        category: queryParams.displayCategory, 
-        country: queryParams.displayCountry, 
+        category: queryParams.displayCategory,
+        country: queryParams.displayCountry,
         publishedAt: article.publishedAt,
         url: article.url,
         aiHint: this.generateAiHint(queryParams.displayCategory, article.title || ""),
         originalProvider: 'gnews.io',
       }));
+      // GNews can sort with `sortby=publishedAt`, but we sort again to be sure and consistent.
+      return this.sortArticlesByDate(articles);
     } catch (error) {
       console.error('Exception during GNews fetch or processing:', error);
       if (error instanceof Error && error.message.includes("API key issue")) {
         throw error;
       }
-      throw new Error(`Failed to fetch from GNews: ${error instanceof Error ? error.message : String(error)}`);
+      // Do not re-throw general errors here to allow fallback
+      return []; // Return empty array to allow fallback
     }
   }
 
@@ -433,3 +454,4 @@ export class NewsService {
     return this.fetchNews({ category, displayCategory: category, displayCountry: 'Global' });
   }
 }
+
