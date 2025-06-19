@@ -49,6 +49,7 @@ const nextConfig: NextConfig = {
       // Example: If NewsAPI used its own CDN: { protocol: 'https', hostname: 'newsapi.org' }
       // The Guardian is already covered by **.theguardian.com
       // Mediastack: similar to others, it will link to source domains.
+      { protocol: 'https', hostname: 'media.losandes.com.ar' },
     ],
   },
 };
