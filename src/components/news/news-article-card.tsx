@@ -19,8 +19,12 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
   const { user, updateUser, incrementCategoryClick } = useAuth();
 
   const handleShare = () => {
-    navigator.clipboard.writeText(article.url);
-    toast({ title: "Link Copied!", description: "Article link copied to clipboard." });
+    if (navigator.clipboard && article.url) {
+      navigator.clipboard.writeText(article.url);
+      toast({ title: "Link Copied!", description: "Article link copied to clipboard." });
+    } else {
+      toast({ variant: "destructive", title: "Copy Failed", description: "Could not copy link." });
+    }
   };
 
   const handleVerify = () => {
@@ -36,14 +40,16 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
     if (user && article.category) { 
       incrementCategoryClick(article.category);
     }
-    window.open(article.url, '_blank');
+    if (article.url) {
+      window.open(article.url, '_blank');
+    }
   };
 
   const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png";
 
   return (
     <Card className="flex flex-col md:flex-row overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg h-full">
-      {/* Image Section */}
+      {/* Image Section - Temporarily Disabled
       <div 
         className="relative w-full md:w-48 lg:w-56 xl:w-64 h-48 md:h-auto flex-shrink-0 cursor-pointer"
         onClick={handleCardClick}
@@ -57,6 +63,7 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
           data-ai-hint={article.aiHint || "news article"}
         />
       </div>
+      */}
 
       {/* Content Section */}
       <div className="flex flex-col flex-grow p-4 justify-between">
@@ -74,7 +81,7 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
           </CardContent>
         </div>
         <CardFooter className="flex justify-between items-center p-0 mt-4 pt-4 border-t">
-          <Button variant="ghost" size="sm" onClick={handleShare} aria-label="Share article">
+          <Button variant="ghost" size="sm" onClick={handleShare} aria-label="Share article" disabled={!article.url}>
             <Share2 className="mr-2 h-4 w-4" /> Share
           </Button>
           <Button variant="outline" size="sm" onClick={handleVerify} aria-label="Verify article accuracy">
