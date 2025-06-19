@@ -1,6 +1,7 @@
 
 "use client";
 
+import * as React from 'react'; // Added to ensure React is in scope for useState
 // import Image from 'next/image'; // Image disabled for now
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,7 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
     }
   };
   
-  const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png"; // Fallback for missing images
+  // const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png"; // Fallback for missing images
 
   // Format date or show placeholder
   let displayDate = 'Unknown date';
@@ -103,6 +104,19 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
            </span>
         )}
       </div>
+      
+      {/* 
+      <div className="relative w-full h-48 mb-4 neu-brutal overflow-hidden">
+        <Image 
+          src={displayImageUrl} 
+          alt={article.title} 
+          layout="fill" 
+          objectFit="cover"
+          className="bg-muted"
+          data-ai-hint={article.aiHint || "news media"}
+        />
+      </div>
+      */}
       
       <CardHeader className="p-0 mb-2">
         <CardTitle className="text-lg md:text-xl font-bold leading-tight line-clamp-3">{article.title}</CardTitle>
@@ -147,3 +161,4 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
     </Card>
   );
 }
+
