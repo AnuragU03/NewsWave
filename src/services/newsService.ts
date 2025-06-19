@@ -112,10 +112,10 @@ export class NewsService {
     } catch (error) {
       console.error('Error fetching from Newsdata.io:', error);
       if (error instanceof Error && (error.message.includes('API key') || error.message.includes('configured or available'))) {
-          // If it's an API key issue from Newsdata, we might not want to immediately try another,
-          // or we might want to throw this error to the user directly.
-          // For now, let's log and proceed to try Mediastack.
+          // Re-throw the error if it's specifically about API keys, so the page can display it.
+          throw error;
       }
+      // For other errors from Newsdata.io (network, non-key API error), log and proceed to Mediastack.
     }
     
     try {
@@ -129,17 +129,21 @@ export class NewsService {
        if (error instanceof Error && (error.message.includes('API key') || error.message.includes('configured or available'))) {
           throw error; // Re-throw Mediastack API key issues to be displayed.
       }
+      // For other errors from Mediastack, log and proceed to return empty.
     }
 
-    console.warn('All primary news APIs (Newsdata.io, Mediastack) failed or returned no articles.');
-    // If we reached here and no specific API key error was thrown for the *last* attempted API,
-    // it means APIs might be down or returning empty.
-    // Throw a generic error or return empty based on desired behavior.
+    console.warn('All primary news APIs (Newsdata.io, Mediastack) failed or returned no articles without specific API key errors being thrown.');
     return []; 
   }
 
   private async tryNewsData(queryParams: NewsQueryParams): Promise<Article[]> {
-    const newsDataSettings = apiConfig.news.newsdata;
+    const newsDataSettings = apiConfig.news.newsdata; 
+    if (!newsDataSettings) {
+        console.error("Newsdata.io configuration is missing in apiConfig.");
+        // This is a config error, should ideally not happen if apiConfig.ts is correct.
+        // Throwing here would stop the fallback, which might be desired if config is broken.
+        throw new Error("Newsdata.io API configuration missing."); 
+    }
     const apiKey = this.apiRotator.getNextAvailableKey('newsdata', newsDataSettings.keys);
 
     if (!apiKey) {
@@ -149,7 +153,7 @@ export class NewsService {
     const params = new URLSearchParams({
       apikey: apiKey,
       image: '1',
-      language: 'en', // Limiting to English for now
+      language: 'en', 
     });
 
     let newsdataCategoryParam = queryParams.category?.toLowerCase();
@@ -172,7 +176,7 @@ export class NewsService {
 
       if (!response.ok || data.status === 'error') {
         let errorMessage = `Newsdata.io API error: Status ${response.status}.`;
-        // Newsdata.io error structure can vary
+        
         if (data.results && typeof data.results === 'object' && 'message' in (data.results as any) ) {
             errorMessage = `Newsdata.io API error: ${(data.results as { message: string }).message}`;
         } else if (data.message) {
@@ -180,11 +184,13 @@ export class NewsService {
         } else if (data.code) {
              errorMessage = `Newsdata.io API error code: ${data.code}`;
         }
-        console.error('Newsdata.io API request failed:', errorMessage, data);
-        if (errorMessage.toLowerCase().includes('api key') || errorMessage.toLowerCase().includes('apikey')) {
+        console.error('Newsdata.io API request failed details:', errorMessage, data);
+        if (errorMessage.toLowerCase().includes('api key') || errorMessage.toLowerCase().includes('apikey') || (data.code && data.code.toLowerCase().includes('unauthorized'))) {
             throw new Error(`Newsdata.io API key issue: ${errorMessage}. Please check NEWSDATA_API_KEY or your API plan.`);
         }
-        return []; // For other errors, return empty to allow fallback
+        // For other non-key related API errors from Newsdata.io, return empty to allow fallback.
+        console.warn(`Newsdata.io returned non-key error, allowing fallback: ${errorMessage}`);
+        return []; 
       }
       
       if (!data.results || data.results.length === 0) {
@@ -205,39 +211,40 @@ export class NewsService {
         originalProvider: 'newsdata.io',
       }));
     } catch (error) {
-      console.error('Failed to fetch or parse from Newsdata.io:', error);
+      // Catch errors from fetch itself (e.g. network) or if parsing response fails, or if an API key error was thrown above
+      console.error('Exception during Newsdata.io fetch or processing:', error);
       if (error instanceof Error && error.message.includes("API key issue")) {
-        throw error;
+        throw error; // Re-throw API key specific errors
       }
-      return []; 
+      // For other general errors, allow fallback by returning empty or re-throw if critical
+      throw new Error(`Failed to fetch from Newsdata.io: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   private async tryMediaStack(queryParams: NewsQueryParams): Promise<Article[]> {
     const mediaStackSettings = apiConfig.news.mediastack;
+    if (!mediaStackSettings) {
+        console.error("Mediastack configuration is missing in apiConfig.");
+        throw new Error("Mediastack API configuration missing.");
+    }
     const apiKey = this.apiRotator.getNextAvailableKey('mediastack', mediaStackSettings.keys);
 
     if (!apiKey) {
-      // Don't throw here if NewsData was already tried. Let fetchNews handle the "all failed" scenario.
-      // If Mediastack is the *only* one configured, then throwing would be appropriate.
-      // For now, assume it's a fallback.
-      console.warn('No Mediastack API key is configured or available.');
-      return [];
+      // If Mediastack is attempted as a fallback and has no key, it should throw an error to be noticeable.
+      throw new Error('No Mediastack API key is configured or available. Please check MEDIASTACK_KEY_... in .env file.');
     }
 
     const params = new URLSearchParams({
       access_key: apiKey,
-      limit: '25', // Fetch a bit more to filter down to 21 if needed
-      languages: 'en', // Limiting to English
+      limit: '25', 
+      languages: 'en', 
     });
 
     if (queryParams.category && queryParams.category.toLowerCase() !== 'all' && queryParams.category.toLowerCase() !== 'general') {
       params.append('categories', queryParams.category.toLowerCase());
     } else if (queryParams.category?.toLowerCase() === 'general') {
-       // Mediastack uses 'general' for its main category. If 'all', don't specify category to get general.
        params.append('categories', 'general');
     }
-
 
     if (queryParams.country && queryParams.country.toLowerCase() !== 'all' && queryParams.country.toLowerCase() !== 'global') {
       params.append('countries', queryParams.country.toLowerCase());
@@ -253,9 +260,11 @@ export class NewsService {
 
       if (data.error) {
         console.error(`Mediastack API error: ${data.error.code} - ${data.error.message}`);
-        if (data.error.code.includes('api_key') || data.error.code.includes('access_key') || data.error.code.includes('subscription')) {
+        if (data.error.code.includes('api_key') || data.error.code.includes('access_key') || data.error.code.includes('subscription') || data.error.message.toLowerCase().includes('api key')) {
              throw new Error(`Mediastack API key issue: ${data.error.message}. Please check your MEDIASTACK_KEY_... in .env or your API plan limits.`);
         }
+        // For other non-key related API errors from Mediastack
+        console.warn(`Mediastack returned non-key error: ${data.error.message}`);
         return [];
       }
       
@@ -264,7 +273,7 @@ export class NewsService {
       }
 
       return data.data.slice(0, 21).map((article, index) => ({
-        id: article.url || `${article.source}_${index}`,
+        id: article.url || `${article.source}_${index}_${new Date().getTime()}`, // Ensure unique ID
         title: article.title || 'No title available',
         summary: article.description || 'No summary available',
         imageUrl: article.image || `https://placehold.co/600x400.png`,
@@ -277,24 +286,27 @@ export class NewsService {
         originalProvider: 'mediastack.com',
       }));
     } catch (error) {
-      console.error('Failed to fetch or parse from Mediastack:', error);
+      console.error('Exception during Mediastack fetch or processing:', error);
       if (error instanceof Error && error.message.includes("API key issue")) {
-        throw error;
+        throw error; // Re-throw API key specific errors
       }
-      return []; 
+      throw new Error(`Failed to fetch from Mediastack: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  // Stub for The Guardian - can be implemented if Guardian key is provided
   private async tryGuardianApi(params: NewsQueryParams): Promise<Article[]> {
     const guardianSettings = apiConfig.news.guardian;
+    if (!guardianSettings) {
+        console.warn("Guardian API configuration missing.");
+        return [];
+    }
     const apiKey = this.apiRotator.getNextAvailableKey('guardian', guardianSettings.keys);
     if (!apiKey) {
-      console.warn('No Guardian API key configured for tryGuardianApi.');
+      console.warn('No Guardian API key configured for tryGuardianApi. Add GUARDIAN_KEY_1 to .env');
+      // Potentially throw new Error('No Guardian API key configured. Add GUARDIAN_KEY_1 to .env file.');
       return [];
     }
     console.log('Attempting to fetch from The Guardian (stubbed)', params);
-    // Implementation would be similar, using guardian config
     return [];
   }
 
