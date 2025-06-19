@@ -1,11 +1,10 @@
 
 "use client";
 
-import * as React from 'react'; // Added to ensure React is in scope for useState
-// import Image from 'next/image'; // Image disabled for now
+import React, { useState } from 'react'; // Ensured React and useState are imported
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Share2, CheckCircle, Tag, ExternalLink, ShieldQuestion, ShieldCheck } from 'lucide-react'; // Using Lucide icons
+import { Share2, ShieldQuestion, ShieldCheck, ExternalLink } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
 import { formatDistanceToNow } from 'date-fns';
@@ -18,11 +17,7 @@ interface NewsArticleCardProps {
 export default function NewsArticleCard({ article }: NewsArticleCardProps) {
   const { toast } = useToast();
   const { user, updateUser, incrementCategoryClick } = useAuth();
-  // For Neubrutalism, we might not always want verified status directly on the user object,
-  // but rather as a state managed per article in the UI if verification is transient.
-  // For now, let's assume `article.verified` might come from somewhere or is a UI state.
-  // This example will use a mock `isVerified` state for demonstration if article.verified is not present.
-  const [isVerified, setIsVerified] = React.useState(false); // Example local state
+  const [isVerified, setIsVerified] = useState(article.verified || false); 
 
   const handleShare = () => {
     if (!user) {
@@ -32,9 +27,6 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
     if (navigator.clipboard && article.url) {
       navigator.clipboard.writeText(article.url);
       toast({ title: "Link Copied!", description: "Article link copied to clipboard." });
-      // Increment share count - this logic should ideally be in AuthContext or a server action
-      // For demo, assume updateUser can handle adding to a share count if user model has it
-      // updateUser({ sharedCount: (user.sharedCount || 0) + 1 });
     } else {
       toast({ variant: "destructive", title: "Copy Failed", description: "Could not copy link." });
     }
@@ -45,19 +37,18 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
       toast({ variant: "destructive", title: "Login Required", description: "Please log in to verify articles." });
       return;
     }
-    // Toggle verification status (local example)
-    setIsVerified(!isVerified); 
-    if (!isVerified) { // If it's now verified
+    const newVerificationStatus = !isVerified;
+    setIsVerified(newVerificationStatus); 
+    if (newVerificationStatus) { 
       updateUser({ points: (user.points || 0) + 10 });
       toast({ title: "Article Verified!", description: "You earned 10 points." });
-    } else { // If verification is removed
-       updateUser({ points: Math.max(0, (user.points || 0) - 10) }); // Deduct points, ensure not negative
+    } else { 
+       updateUser({ points: Math.max(0, (user.points || 0) - 10) }); 
        toast({ title: "Verification Removed", description: "Points adjusted." });
     }
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Prevent opening link if a button inside card was clicked
     if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a[target="_blank"]')) {
       return;
     }
@@ -69,16 +60,12 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
     }
   };
   
-  // const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png"; // Fallback for missing images
-
-  // Format date or show placeholder
   let displayDate = 'Unknown date';
   if (article.publishedAt) {
     try {
       displayDate = formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true });
     } catch (e) {
       console.warn("Could not parse date:", article.publishedAt);
-      // displayDate remains 'Unknown date' or could be article.publishedAt directly
     }
   }
 
@@ -151,8 +138,8 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
             href={article.url} 
             target="_blank" 
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()} // Prevent card click
-            className="inline-flex items-center justify-center neu-brutal bg-newsmania-pink text-black neu-brutal-hover neu-brutal-active px-3 py-1 text-xs font-semibold rounded-md" // Added rounded-md for consistency with Button
+            onClick={(e) => e.stopPropagation()} 
+            className="inline-flex items-center justify-center neu-brutal bg-newsmania-pink text-black neu-brutal-hover neu-brutal-active px-3 py-1 text-xs font-semibold rounded-md" 
           >
             Read <ExternalLink size={14} className="ml-1" />
           </a>
@@ -161,4 +148,3 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
     </Card>
   );
 }
-
