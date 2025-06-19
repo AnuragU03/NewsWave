@@ -1,43 +1,75 @@
+
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import NewsArticleCard, { type NewsArticle } from '@/components/news/news-article-card';
 import Filters from '@/components/news/filters';
 import { Skeleton } from '@/components/ui/skeleton';
+import { fetchNews } from '@/services/news-service'; // Import the new service
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 
-const mockArticles: NewsArticle[] = [
-  { id: '1', title: 'Groundbreaking AI discovers new exoplanet', summary: 'Scientists harness artificial intelligence to find a planet with Earth-like conditions in a distant solar system.', imageUrl: 'https://placehold.co/600x400.png', source: 'Tech Chronicle', category: 'Technology', country: 'USA', publishedAt: new Date(Date.now() - 3600000 * 2).toISOString(), url: '#', aiHint: 'planet space' },
-  { id: '2', title: 'Global markets react to new trade agreement', summary: 'Stock exchanges worldwide show mixed reactions following the announcement of a major international trade deal.', imageUrl: 'https://placehold.co/600x400.png', source: 'Financial Times', category: 'Business', country: 'UK', publishedAt: new Date(Date.now() - 3600000 * 5).toISOString(), url: '#', aiHint: 'stock market' },
-  { id: '3', title: 'Champions League Final: Underdogs Triumph', summary: 'In a stunning upset, the underdog team clinched the Champions League trophy after a dramatic penalty shootout.', imageUrl: 'https://placehold.co/600x400.png', source: 'Sports Today', category: 'Sports', country: 'Global', publishedAt: new Date(Date.now() - 3600000 * 1).toISOString(), url: '#', aiHint: 'soccer stadium' },
-  { id: '4', title: 'Breakthrough in Cancer Research Announced', summary: 'A new study reveals a promising new therapy that targets cancer cells with unprecedented accuracy.', imageUrl: 'https://placehold.co/600x400.png', source: 'Health Journal', category: 'Health', country: 'Canada', publishedAt: new Date(Date.now() - 3600000 * 8).toISOString(), url: '#', aiHint: 'science lab' },
-  { id: '5', title: 'New Art Exhibit Opens Downtown', summary: 'A captivating new exhibition featuring contemporary artists from around the world has opened at the city gallery.', imageUrl: 'https://placehold.co/600x400.png', source: 'City Arts', category: 'Entertainment', country: 'USA', publishedAt: new Date(Date.now() - 3600000 * 3).toISOString(), url: '#', aiHint: 'art gallery' },
-  { id: '6', title: 'Exploring the Wonders of the Amazon', summary: 'A documentary team ventures deep into the Amazon rainforest, uncovering breathtaking biodiversity and ancient cultures.', imageUrl: 'https://placehold.co/600x400.png', source: 'Nature Explorer', category: 'Science', country: 'Brazil', publishedAt: new Date(Date.now() - 3600000 * 12).toISOString(), url: '#', aiHint: 'rainforest nature' },
-];
+const categories = ["Technology", "Business", "Sports", "Health", "Science", "Entertainment", "General"];
+const countries = ["USA", "UK", "Canada", "Global", "Brazil"]; // Global will mean no specific country filter
 
-const categories = ["Technology", "Business", "Sports", "Health", "Science", "Entertainment"];
-const countries = ["USA", "UK", "Canada", "Global", "Brazil"];
+const countryCodeMap: { [key: string]: string | null } = {
+  "USA": "us",
+  "UK": "gb",
+  "Canada": "ca",
+  "Brazil": "br",
+  "Global": null, // Omit country parameter for global
+};
 
 export default function DashboardPage() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedCountry, setSelectedCountry] = useState('all');
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+
+  const loadNews = useCallback(async () => {
+    setIsLoading(true);
+    setApiKeyError(null);
+
+    let apiCategory: string | null = selectedCategory.toLowerCase();
+    if (selectedCategory === 'all' || selectedCategory === 'General') {
+      apiCategory = 'general'; // NewsAPI uses 'general' for broad news
+    }
+    
+    let apiCountryCode: string | null = null;
+    if (selectedCountry !== 'all' && countryCodeMap[selectedCountry] !== undefined) {
+      apiCountryCode = countryCodeMap[selectedCountry];
+    }
+
+    // Determine display category/country for cards
+    const displayCategoryForCard = selectedCategory === 'all' ? 'General' : selectedCategory;
+    const displayCountryForCard = selectedCountry === 'all' ? 'Global' : selectedCountry;
+
+    try {
+      // If 'all' categories and 'all' countries are selected, provide a default query.
+      // NewsAPI requires at least one of q, sources, category, or country (for top-headlines).
+      // We'll default to 'general' category if nothing else is specified.
+      const categoryToFetch = (selectedCategory === 'all' && selectedCountry === 'all') ? 'general' : apiCategory;
+      const countryToFetch = selectedCountry === 'all' ? null : apiCountryCode;
+
+      const fetchedArticles = await fetchNews(categoryToFetch, countryToFetch, displayCategoryForCard, displayCountryForCard);
+      setArticles(fetchedArticles);
+    } catch (error) {
+      console.error("Failed to fetch news articles:", error);
+      if (error instanceof Error && error.message.includes('API key')) {
+        setApiKeyError(error.message);
+      } else {
+        setApiKeyError("Could not load news. Please try again later.");
+      }
+      setArticles([]); // Clear articles on error
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedCategory, selectedCountry]);
 
   useEffect(() => {
-    // Simulate API call
-    setIsLoading(true);
-    setTimeout(() => {
-      let filteredArticles = mockArticles;
-      if (selectedCategory !== 'all') {
-        filteredArticles = filteredArticles.filter(article => article.category === selectedCategory);
-      }
-      if (selectedCountry !== 'all') {
-        filteredArticles = filteredArticles.filter(article => article.country === selectedCountry);
-      }
-      setArticles(filteredArticles);
-      setIsLoading(false);
-    }, 1000);
-  }, [selectedCategory, selectedCountry]);
+    loadNews();
+  }, [loadNews]);
 
   const handleClearFilters = () => {
     setSelectedCategory('all');
@@ -61,6 +93,18 @@ export default function DashboardPage() {
         onClearFilters={handleClearFilters}
       />
 
+      {apiKeyError && (
+        <Alert variant="destructive" className="mb-6">
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>API Error</AlertTitle>
+          <AlertDescription>
+            {apiKeyError}
+            {apiKeyError.includes("API key") && 
+              " Please ensure your NEWS_API_KEY is correctly set in the .env file."}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
@@ -73,7 +117,7 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
-      ) : articles.length === 0 ? (
+      ) : articles.length === 0 && !apiKeyError ? (
           <div className="text-center py-12">
             <h2 className="text-2xl font-semibold text-muted-foreground">No articles found.</h2>
             <p className="text-muted-foreground mt-2">Try adjusting your filters or check back later.</p>
