@@ -6,14 +6,14 @@ import NewsArticleCard from '@/components/news/news-article-card';
 import type { Article as NewsArticle } from '@/services/newsService'; // Use the new Article type
 import Filters from '@/components/news/filters';
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchNewsArticles } from '@/actions/newsActions'; // Updated import
+import { fetchNewsArticles } from '@/actions/newsActions';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 
 const categories = ["Technology", "Business", "Sports", "Health", "Science", "Entertainment", "General", "Politics", "Food", "Travel"];
-const countries = ["USA", "UK", "Canada", "Global", "Brazil", "Australia", "India", "Germany", "France"]; // Added more
+const countries = ["USA", "UK", "Canada", "Global", "Brazil", "Australia", "India", "Germany", "France", "Japan", "China"]; // Added more
 
-// Country codes for NewsAPI.org (and generally common)
+// Country codes for Newsdata.io and Mediastack (generally common 2-letter ISO)
 const countryCodeMap: { [key: string]: string | null } = {
   "USA": "us",
   "UK": "gb",
@@ -23,43 +23,45 @@ const countryCodeMap: { [key: string]: string | null } = {
   "India": "in",
   "Germany": "de",
   "France": "fr",
+  "Japan": "jp",
+  "China": "cn",
   "Global": null, 
 };
 
 export default function DashboardPage() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('all'); // 'all' or actual category name
-  const [selectedCountry, setSelectedCountry] = useState('all'); // 'all' or actual country name
+  const [selectedCategory, setSelectedCategory] = useState('all'); 
+  const [selectedCountry, setSelectedCountry] = useState('all'); 
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
   const loadNews = useCallback(async () => {
     setIsLoading(true);
     setApiKeyError(null);
 
-    let apiCategory: string | null = selectedCategory.toLowerCase();
-    if (selectedCategory === 'all' || selectedCategory === 'General') {
-      apiCategory = 'general'; // NewsService might map this further if needed by API
-    } else {
-      apiCategory = selectedCategory.toLowerCase(); // Use actual category name for API
+    let apiCategoryQuery: string | null = selectedCategory.toLowerCase();
+    if (selectedCategory === 'all') {
+      apiCategoryQuery = 'general'; // Default to 'general' for "All Categories" for APIs
     }
     
     let apiCountryCode: string | null = null;
     if (selectedCountry !== 'all' && countryCodeMap[selectedCountry] !== undefined) {
       apiCountryCode = countryCodeMap[selectedCountry];
+    } else if (selectedCountry === 'all') {
+      apiCountryCode = null; // Explicitly null for global/all countries
     }
+
 
     const displayCategoryForCard = selectedCategory === 'all' ? 'General' : selectedCategory;
     const displayCountryForCard = selectedCountry === 'all' ? 'Global' : selectedCountry;
 
     try {
-      // Use the new server action
-      const fetchedArticles = await fetchNewsArticles(apiCategory, apiCountryCode, displayCategoryForCard, displayCountryForCard);
+      const fetchedArticles = await fetchNewsArticles(apiCategoryQuery, apiCountryCode, displayCategoryForCard, displayCountryForCard);
       setArticles(fetchedArticles);
     } catch (error) {
       console.error("Failed to fetch news articles:", error);
-      if (error instanceof Error && error.message.includes('API key')) {
-        setApiKeyError(error.message); // Display specific API key errors
+      if (error instanceof Error && error.message.toLowerCase().includes('api key')) {
+        setApiKeyError(error.message); 
       } else {
          setApiKeyError(error instanceof Error ? error.message : "Could not load news. Please try again later.");
       }
@@ -101,8 +103,12 @@ export default function DashboardPage() {
           <AlertTitle>API Configuration Error</AlertTitle>
           <AlertDescription>
             {apiKeyError}
-            {apiKeyError.includes("API key") && 
-              " Please ensure your API keys (e.g., NEWSAPI_KEY_1) are correctly set in the .env file."}
+            {apiKeyError.toLowerCase().includes("newsdata.io api key") && 
+              " Please ensure your NEWSDATA_API_KEY is correctly set in the .env file."}
+            {apiKeyError.toLowerCase().includes("mediastack api key") && 
+              " Please ensure your MEDIASTACK_KEY_... (e.g., MEDIASTACK_KEY_1) is correctly set in the .env file."}
+            {!apiKeyError.toLowerCase().includes("newsdata.io api key") && !apiKeyError.toLowerCase().includes("mediastack api key") && apiKeyError.toLowerCase().includes("api key") &&
+              " Please ensure your API keys (e.g., NEWSDATA_API_KEY, MEDIASTACK_KEY_1) are correctly set in the .env file."}
           </AlertDescription>
         </Alert>
       )}
@@ -111,11 +117,13 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="bg-card p-4 rounded-lg shadow-md space-y-3">
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-48 w-full md:w-48 lg:w-56 xl:w-64 md:h-auto flex-shrink-0" />
+              <div className="flex-grow space-y-2">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
             </div>
           ))}
         </div>

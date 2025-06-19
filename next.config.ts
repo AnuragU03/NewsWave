@@ -17,7 +17,9 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      // Newsdata.io images (still useful as NewsAPI also links to diverse sources)
+      // Newsdata.io images
+      { protocol: 'https', hostname: 'cdn.newsdata.io' },
+      // Common news domains (useful for Mediastack and other general news link-outs)
       { protocol: 'https', hostname: '**.reuters.com' },
       { protocol: 'https', hostname: '**.ft.com' },
       { protocol: 'https', hostname: '**.wsj.com' },
@@ -27,9 +29,9 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '**.bbc.co.uk' },
       { protocol: 'https', hostname: '**.bbc.com' },
       { protocol: 'https', hostname: 'news.google.com' },
-      { protocol: 'https', hostname: '**.google.com' }, // General Google for images
+      { protocol: 'https', hostname: '**.google.com' },
       { protocol: 'https', hostname: 's.yimg.com' },
-      { protocol: 'https', hostname: '**.theguardian.com' }, // Also a direct API source
+      { protocol: 'https', hostname: '**.theguardian.com' },
       { protocol: 'https', hostname: '**.apnews.com' },
       { protocol: 'https', hostname: '**.techcrunch.com' },
       { protocol: 'https', hostname: '**.theverge.com' },
@@ -42,13 +44,6 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 's-aicmscdn.nhipsongkinhdoanh.vn' },
       { protocol: 'https', hostname: 'vesti.az' },
       { protocol: 'https', hostname: 'keralakaumudi.com' },
-      { protocol: 'https', hostname: 'cdn.newsdata.io' },
-      // NewsAPI.org - often links to publisher sites, but add if it ever proxies
-      // No specific domain for NewsAPI.org itself as it links out, but some images might come from generic CDNs
-      // Check for common CDNs used by news outlets if more errors appear.
-      // Example: If NewsAPI used its own CDN: { protocol: 'https', hostname: 'newsapi.org' }
-      // The Guardian is already covered by **.theguardian.com
-      // Mediastack: similar to others, it will link to source domains.
       { protocol: 'https', hostname: 'media.losandes.com.ar' },
     ],
   },
