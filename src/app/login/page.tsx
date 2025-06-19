@@ -44,7 +44,7 @@ export default function LoginPage() {
     try {
       await login(values.email); // Mock login, password not used for mock
       toast({ title: "Login Successful", description: "Welcome back!" });
-      router.push("/profile");
+      router.push("/"); // Changed to redirect to home page
     } catch (error) {
       toast({ variant: "destructive", title: "Login Failed", description: "Invalid credentials." });
     }
@@ -52,13 +52,13 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-      <Card className="w-full max-w-md shadow-xl">
+      <Card className="w-full max-w-md shadow-xl neu-brutal">
         <CardHeader className="text-center">
-          <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
+          <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4 neu-brutal">
             <LogIn size={32} />
           </div>
           <CardTitle className="text-3xl font-headline">Welcome Back!</CardTitle>
-          <CardDescription>Log in to your NewsWave account.</CardDescription>
+          <CardDescription>Log in to your NewsMania account.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -70,7 +70,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="you@example.com" {...field} />
+                      <Input placeholder="you@example.com" {...field} className="neu-brutal focus:ring-primary"/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -83,13 +83,13 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="••••••••" {...field} className="neu-brutal focus:ring-primary"/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              <Button type="submit" className="w-full neu-brutal bg-primary text-primary-foreground hover:bg-primary/90 neu-brutal-hover neu-brutal-active" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Logging in..." : "Login"}
               </Button>
             </form>
