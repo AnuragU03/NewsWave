@@ -46,6 +46,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'keralakaumudi.com' },
       { protocol: 'https', hostname: 'media.losandes.com.ar' },
       { protocol: 'https', hostname: 'cassette.sphdigital.com.sg' },
+      { protocol: 'https', hostname: 'bloximages.newyork1.vip.townnews.com' },
     ],
   },
 };
