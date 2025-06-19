@@ -17,8 +17,7 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      // Newsdata.io images can come from various sources. These are common ones.
-      // You may need to add more as you discover them from image_url fields.
+      // Newsdata.io images (still useful as NewsAPI also links to diverse sources)
       { protocol: 'https', hostname: '**.reuters.com' },
       { protocol: 'https', hostname: '**.ft.com' },
       { protocol: 'https', hostname: '**.wsj.com' },
@@ -28,13 +27,13 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '**.bbc.co.uk' },
       { protocol: 'https', hostname: '**.bbc.com' },
       { protocol: 'https', hostname: 'news.google.com' },
-      { protocol: 'https', hostname: '**.google.com' },
+      { protocol: 'https', hostname: '**.google.com' }, // General Google for images
       { protocol: 'https', hostname: 's.yimg.com' },
-      { protocol: 'https', hostname: '**.theguardian.com' },
+      { protocol: 'https', hostname: '**.theguardian.com' }, // Also a direct API source
       { protocol: 'https', hostname: '**.apnews.com' },
       { protocol: 'https', hostname: '**.techcrunch.com' },
       { protocol: 'https', hostname: '**.theverge.com' },
-      { protocol: 'https', hostname: 'img.etimg.com' }, // Example for Economic Times (India)
+      { protocol: 'https', hostname: 'img.etimg.com' },
       { protocol: 'https', hostname: 'images.indianexpress.com' },
       { protocol: 'https', hostname: 'www.aljazeera.com' },
       { protocol: 'https', hostname: 'bloximages.chicago2.vip.townnews.com' },
@@ -43,9 +42,13 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 's-aicmscdn.nhipsongkinhdoanh.vn' },
       { protocol: 'https', hostname: 'vesti.az' },
       { protocol: 'https', hostname: 'keralakaumudi.com' },
-      // Generic pattern for newsdata.io itself if they ever proxy images, unlikely but safe.
-      { protocol: 'https', hostname: 'cdn.newsdata.io' }, 
-      // Add other hostnames Newsdata.io might return for image_url
+      { protocol: 'https', hostname: 'cdn.newsdata.io' },
+      // NewsAPI.org - often links to publisher sites, but add if it ever proxies
+      // No specific domain for NewsAPI.org itself as it links out, but some images might come from generic CDNs
+      // Check for common CDNs used by news outlets if more errors appear.
+      // Example: If NewsAPI used its own CDN: { protocol: 'https', hostname: 'newsapi.org' }
+      // The Guardian is already covered by **.theguardian.com
+      // Mediastack: similar to others, it will link to source domains.
     ],
   },
 };

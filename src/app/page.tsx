@@ -2,16 +2,18 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import NewsArticleCard, { type NewsArticle } from '@/components/news/news-article-card';
+import NewsArticleCard from '@/components/news/news-article-card';
+import type { Article as NewsArticle } from '@/services/newsService'; // Use the new Article type
 import Filters from '@/components/news/filters';
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchNews } from '@/services/news-service'; 
+import { fetchNewsArticles } from '@/actions/newsActions'; // Updated import
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 
-const categories = ["Technology", "Business", "Sports", "Health", "Science", "Entertainment", "General", "Politics", "Food", "Travel"]; // Added more Newsdata.io relevant cats
-const countries = ["USA", "UK", "Canada", "Global", "Brazil", "Australia", "India"]; // Added more countries
+const categories = ["Technology", "Business", "Sports", "Health", "Science", "Entertainment", "General", "Politics", "Food", "Travel"];
+const countries = ["USA", "UK", "Canada", "Global", "Brazil", "Australia", "India", "Germany", "France"]; // Added more
 
+// Country codes for NewsAPI.org (and generally common)
 const countryCodeMap: { [key: string]: string | null } = {
   "USA": "us",
   "UK": "gb",
@@ -19,25 +21,27 @@ const countryCodeMap: { [key: string]: string | null } = {
   "Brazil": "br",
   "Australia": "au",
   "India": "in",
+  "Germany": "de",
+  "France": "fr",
   "Global": null, 
 };
 
 export default function DashboardPage() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedCountry, setSelectedCountry] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all'); // 'all' or actual category name
+  const [selectedCountry, setSelectedCountry] = useState('all'); // 'all' or actual country name
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
   const loadNews = useCallback(async () => {
     setIsLoading(true);
     setApiKeyError(null);
 
-    // apiCategory will be lowercase category name or 'general' if 'all' or 'General' is selected.
-    // This 'general' will be mapped to 'top' by the news-service for Newsdata.io.
-    let apiCategory: string = selectedCategory.toLowerCase();
+    let apiCategory: string | null = selectedCategory.toLowerCase();
     if (selectedCategory === 'all' || selectedCategory === 'General') {
-      apiCategory = 'general'; 
+      apiCategory = 'general'; // NewsService might map this further if needed by API
+    } else {
+      apiCategory = selectedCategory.toLowerCase(); // Use actual category name for API
     }
     
     let apiCountryCode: string | null = null;
@@ -49,17 +53,13 @@ export default function DashboardPage() {
     const displayCountryForCard = selectedCountry === 'all' ? 'Global' : selectedCountry;
 
     try {
-      // The news-service will handle mapping 'general' to 'top' if needed,
-      // and will default to 'top' if apiCategory is effectively null/all.
-      const categoryToFetch = apiCategory; 
-      const countryToFetch = apiCountryCode;
-
-      const fetchedArticles = await fetchNews(categoryToFetch, countryToFetch, displayCategoryForCard, displayCountryForCard);
+      // Use the new server action
+      const fetchedArticles = await fetchNewsArticles(apiCategory, apiCountryCode, displayCategoryForCard, displayCountryForCard);
       setArticles(fetchedArticles);
     } catch (error) {
       console.error("Failed to fetch news articles:", error);
       if (error instanceof Error && error.message.includes('API key')) {
-        setApiKeyError(error.message);
+        setApiKeyError(error.message); // Display specific API key errors
       } else {
          setApiKeyError(error instanceof Error ? error.message : "Could not load news. Please try again later.");
       }
@@ -98,11 +98,11 @@ export default function DashboardPage() {
       {apiKeyError && (
         <Alert variant="destructive" className="mb-6">
           <Terminal className="h-4 w-4" />
-          <AlertTitle>API Error</AlertTitle>
+          <AlertTitle>API Configuration Error</AlertTitle>
           <AlertDescription>
             {apiKeyError}
             {apiKeyError.includes("API key") && 
-              " Please ensure your NEWSDATA_API_KEY is correctly set in the .env file."}
+              " Please ensure your API keys (e.g., NEWSAPI_KEY_1) are correctly set in the .env file."}
           </AlertDescription>
         </Alert>
       )}

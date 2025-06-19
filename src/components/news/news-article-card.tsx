@@ -4,27 +4,30 @@
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge"; // Badge not currently used
 import { Share2, CheckCircle, Clock, Globe, Tag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
 import { formatDistanceToNow } from 'date-fns';
+import type { Article as NewsArticle } from '@/services/newsService'; // Import the Article type
 
-export interface NewsArticle {
-  id: string;
-  title: string;
-  summary: string;
-  imageUrl: string;
-  source: string;
-  category: string;
-  country: string;
-  publishedAt: string;
-  url: string;
-  aiHint?: string; // For placeholder images
-}
+// The 'Article' type from newsService is now used directly as NewsArticle here.
+// Ensure its properties match what's expected by this component.
+// export interface NewsArticle { // This local interface is no longer needed if types are aligned
+//   id: string;
+//   title: string;
+//   summary: string;
+//   imageUrl: string;
+//   source: string;
+//   category: string;
+//   country: string;
+//   publishedAt: string;
+//   url: string;
+//   aiHint?: string; 
+// }
 
 interface NewsArticleCardProps {
-  article: NewsArticle;
+  article: NewsArticle; // Use the imported Article type
 }
 
 export default function NewsArticleCard({ article }: NewsArticleCardProps) {
@@ -47,11 +50,14 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
   };
 
   const handleCardClick = () => {
-    if (user) {
+    if (user && article.category) { // Ensure category exists
       incrementCategoryClick(article.category);
     }
     window.open(article.url, '_blank');
   };
+
+  const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png";
+
 
   return (
     <Card className="flex flex-col md:flex-row overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg h-full">
@@ -61,11 +67,11 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
         onClick={handleCardClick}
       >
         <Image 
-          src={article.imageUrl} 
+          src={displayImageUrl} 
           alt={article.title} 
           layout="fill" 
           objectFit="cover" 
-          className="md:rounded-l-lg md:rounded-r-none rounded-t-lg" // Adjust rounding for side/top image
+          className="md:rounded-l-lg md:rounded-r-none rounded-t-lg"
           data-ai-hint={article.aiHint || "news article"}
         />
       </div>
@@ -76,9 +82,9 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
           <CardHeader className="p-0 cursor-pointer" onClick={handleCardClick}>
             <CardTitle className="text-xl font-headline leading-tight hover:text-primary transition-colors">{article.title}</CardTitle>
             <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground mt-2">
-              <span className="flex items-center"><Clock size={12} className="mr-1" /> {formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })}</span>
-              <span className="flex items-center"><Tag size={12} className="mr-1" /> {article.category}</span>
-              <span className="flex items-center"><Globe size={12} className="mr-1" /> {article.country}</span>
+              {article.publishedAt && <span className="flex items-center"><Clock size={12} className="mr-1" /> {formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })}</span>}
+              {article.category && <span className="flex items-center"><Tag size={12} className="mr-1" /> {article.category}</span>}
+              {article.country && <span className="flex items-center"><Globe size={12} className="mr-1" /> {article.country}</span>}
             </div>
           </CardHeader>
           <CardContent className="flex-grow p-0 mt-3 cursor-pointer" onClick={handleCardClick}>
