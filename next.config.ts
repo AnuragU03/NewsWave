@@ -38,7 +38,8 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'images.indianexpress.com' },
       { protocol: 'https', hostname: 'www.aljazeera.com' },
       { protocol: 'https', hostname: 'bloximages.chicago2.vip.townnews.com' },
-      { protocol: 'https', hostname: 'afpbb.ismcdn.jp' }, // Added this hostname
+      { protocol: 'https', hostname: 'afpbb.ismcdn.jp' },
+      { protocol: 'https', hostname: 'pxcdn.meridiano.net' }, // Added this hostname
       // Generic pattern for newsdata.io itself if they ever proxy images, unlikely but safe.
       { protocol: 'https', hostname: 'cdn.newsdata.io' }, 
       // Add other hostnames Newsdata.io might return for image_url
