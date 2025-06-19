@@ -79,6 +79,10 @@ export class NewsService {
       }
     } catch (error) {
       console.error('Error fetching from NewsAPI.org:', error);
+      // If error is an API key issue, rethrow it so page.tsx can display it.
+      if (error instanceof Error && (error.message.includes('API key') || error.message.includes('configured or available'))) {
+          throw error;
+      }
       // Fall through to try other APIs if configured, or rethrow/return empty
     }
     
@@ -97,7 +101,10 @@ export class NewsService {
     // }
 
     console.warn('All news APIs failed or returned no articles.');
-    return []; // Return empty if all fail
+    // If we reached here and no specific API key error was thrown, it means APIs might be down or returning empty.
+    // Throw a generic error or return empty based on desired behavior.
+    // For now, let's return empty to allow "No articles found" on the page.
+    return []; 
   }
 
   private async tryNewsApi(queryParams: NewsQueryParams): Promise<Article[]> {
@@ -105,11 +112,8 @@ export class NewsService {
     const apiKey = this.apiRotator.getNextAvailableKey('newsapi', newsApiSettings.keys);
 
     if (!apiKey) {
-      console.error('No NewsAPI.org key available or configured.');
-      // Optionally, you could throw an error that `fetchNewsArticles` can catch
-      // and display to the user if NO keys are configured at all.
-      // For now, returning empty allows fallback to other (future) providers.
-      return [];
+      // This error will be caught by page.tsx and displayed to the user.
+      throw new Error('No NewsAPI.org API key is configured or available. Please check your NEWSAPI_KEY_1 and NEWSAPI_KEY_2 in the .env file.');
     }
 
     const params = new URLSearchParams({
@@ -141,9 +145,10 @@ export class NewsService {
 
       if (data.status === 'error') {
         console.error(`NewsAPI.org error: ${data.code} - ${data.message}`);
-        if (data.code === 'apiKeyMissing' || data.code === 'apiKeyInvalid' || data.code === 'apiKeyDisabled' || data.code === 'keyInvalid') {
-             throw new Error(`NewsAPI.org API key issue: ${data.message}. Please check your NEWSAPI_KEY_1/2 in .env.`);
+        if (data.code === 'apiKeyMissing' || data.code === 'apiKeyInvalid' || data.code === 'apiKeyDisabled' || data.code === 'keyInvalid' || data.code === 'rateLimited') {
+             throw new Error(`NewsAPI.org API key issue: ${data.message}. Please check your NEWSAPI_KEY_1/2 in .env or your API plan limits.`);
         }
+        // For other API errors, return empty to allow potential fallback or just show "no articles"
         return [];
       }
       
@@ -167,9 +172,10 @@ export class NewsService {
     } catch (error) {
       console.error('Failed to fetch or parse from NewsAPI.org:', error);
       if (error instanceof Error && error.message.includes("API key issue")) {
-        throw error; // Re-throw specific API key errors
+        throw error; // Re-throw specific API key errors to be caught by page.tsx
       }
-      return []; // Return empty on other errors to allow fallback
+      // For other network or parsing errors, return empty to allow potential fallback
+      return []; 
     }
   }
 
