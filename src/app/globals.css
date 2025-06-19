@@ -121,7 +121,7 @@
     @apply translate-x-[1px] translate-y-[1px] shadow-[2px_2px_0_0_black];
   }
    .neu-brutal-header {
-    @apply neu-brutal bg-primary text-primary-foreground p-3 md:p-4 inline-block;
+    @apply neu-brutal bg-primary text-primary-foreground p-2 sm:p-3 md:p-4 inline-block;
   }
 }
 

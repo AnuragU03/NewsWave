@@ -35,7 +35,7 @@ export default function Navbar() {
       <div className="container mx-auto px-4 flex items-center justify-between flex-wrap gap-4">
         <Link href="/" className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity">
           {/* <Newspaper className="h-10 w-10 text-primary" /> */}
-          <h1 className="text-3xl md:text-4xl font-bold neu-brutal-header bg-newsmania-yellow text-black">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold neu-brutal-header bg-newsmania-yellow text-black">
             NewsMania
           </h1>
         </Link>
