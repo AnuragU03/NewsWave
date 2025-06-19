@@ -3,42 +3,42 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import NewsArticleCard from '@/components/news/news-article-card';
-import type { Article as NewsArticle } from '@/services/newsService';
-import Filters from '@/components/news/filters';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card } from '@/components/ui/card';
+import type { Article as NewsArticleType } from '@/services/newsService'; // Renamed to avoid conflict
+import Filters from '@/components/news/filters'; // Will need styling updates
+import { Skeleton } from '@/components/ui/skeleton'; // Keep for loading
+import { Card } from '@/components/ui/card'; // For loading skeleton container
 import { fetchNewsArticles } from '@/actions/newsActions';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
-import { useAuth } from '@/contexts/auth-context'; // Import useAuth
+import { AlertTriangle, RefreshCw } from "lucide-react"; // Replaced Terminal with AlertTriangle
+import { useAuth } from '@/contexts/auth-context';
+import { Button } from '@/components/ui/button';
 
 const categories = ["Technology", "Business", "Sports", "Health", "Science", "Entertainment", "General", "Politics", "Food", "Travel"];
-const countries = ["USA", "UK", "Canada", "Global", "Brazil", "Australia", "India", "Germany", "France", "Japan", "China"]; 
-
-const countryCodeMap: { [key: string]: string | null } = {
-  "USA": "us",
-  "UK": "gb",
-  "Canada": "ca",
-  "Brazil": "br",
-  "Australia": "au",
-  "India": "in",
-  "Germany": "de",
-  "France": "fr",
-  "Japan": "jp",
-  "China": "cn",
-  "Global": null, 
-};
+// Country codes for APIs (ensure they match what APIs expect)
+const countries = [
+  { name: "Global", code: "all" }, // 'all' or null for global
+  { name: "USA", code: "us" },
+  { name: "UK", code: "gb" },
+  { name: "Canada", code: "ca" },
+  { name: "Australia", code: "au" },
+  { name: "Germany", code: "de" },
+  { name: "France", code: "fr" },
+  { name: "India", code: "in" },
+  { name: "Japan", code: "jp" },
+  // { name: "China", code: "cn" }, // Example, add more as needed
+];
 
 export default function DashboardPage() {
-  const [articles, setArticles] = useState<NewsArticle[]>([]);
+  const [articles, setArticles] = useState<NewsArticleType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all'); 
-  const [selectedCountry, setSelectedCountry] = useState('all'); 
+  const [selectedCountryCode, setSelectedCountryCode] = useState('all'); 
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
-  const { user } = useAuth(); // Get user from AuthContext
+  const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState(''); // For search input
 
-  const loadNews = useCallback(async () => {
-    setIsLoading(true);
+  const loadNews = useCallback(async (isRetry: boolean = false) => {
+    if (!isRetry) setIsLoading(true); // Don't show full loading on silent retry for AI
     setApiKeyError(null);
 
     let apiCategoryQuery: string | null = selectedCategory.toLowerCase();
@@ -46,81 +46,120 @@ export default function DashboardPage() {
       apiCategoryQuery = 'general'; 
     }
     
-    let apiCountryCode: string | null = null;
-    if (selectedCountry !== 'all' && countryCodeMap[selectedCountry] !== undefined) {
-      apiCountryCode = countryCodeMap[selectedCountry];
-    } else if (selectedCountry === 'all') {
-      apiCountryCode = null; 
-    }
+    // Determine display country name from code
+    const currentCountryObject = countries.find(c => c.code === selectedCountryCode);
+    const displayCountryName = currentCountryObject ? currentCountryObject.name : "Global";
+    const apiCountryCodeForQuery = selectedCountryCode === 'all' ? null : selectedCountryCode;
 
     const displayCategoryForCard = selectedCategory === 'all' ? 'General' : selectedCategory;
-    const displayCountryForCard = selectedCountry === 'all' ? 'Global' : selectedCountry;
 
     try {
       const fetchedArticles = await fetchNewsArticles(
-        apiCategoryQuery, 
-        apiCountryCode, 
+        searchQuery || apiCategoryQuery, // Pass searchQuery if present, otherwise category
+        searchQuery ? null : apiCountryCodeForQuery, // If searching, country might be less relevant or handled by query
         displayCategoryForCard, 
-        displayCountryForCard,
-        user?.categoryClicks // Pass user's category clicks
+        displayCountryName,
+        user?.categoryClicks,
+        searchQuery ? true : false // isSearchQuery flag
       );
       setArticles(fetchedArticles);
     } catch (error) {
       console.error("Failed to fetch news articles:", error);
-      if (error instanceof Error && (error.message.toLowerCase().includes('api key') || error.message.toLowerCase().includes('api token') || error.message.toLowerCase().includes('configured or available'))) {
+      if (error instanceof Error && (error.message.toLowerCase().includes('api key') || error.message.toLowerCase().includes('api token') || error.message.toLowerCase().includes('configured or available') || error.message.toLowerCase().includes('access_key'))) {
         setApiKeyError(error.message); 
       } else {
          setApiKeyError(error instanceof Error ? error.message : "Could not load news. Please try again later.");
       }
       setArticles([]); 
     } finally {
-      setIsLoading(false);
+      if (!isRetry) setIsLoading(false);
     }
-  }, [selectedCategory, selectedCountry, user]); // Add user to dependencies
+  }, [selectedCategory, selectedCountryCode, user, searchQuery]);
 
   useEffect(() => {
     loadNews();
   }, [loadNews]);
+  
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (searchQuery) { // Only fetch if search query is not empty
+          loadNews();
+      } else if (!searchQuery && (selectedCategory !== 'all' || selectedCountryCode !== 'all')) {
+         // If search is cleared, reload based on filters if they are not default
+         loadNews();
+      } else if (!searchQuery && selectedCategory === 'all' && selectedCountryCode === 'all') {
+         // If search cleared and filters are default, load general news
+         loadNews();
+      }
+    }, 500); // 500ms debounce
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]); // Effect only runs when searchQuery changes
+
 
   const handleClearFilters = () => {
     setSelectedCategory('all');
-    setSelectedCountry('all');
+    setSelectedCountryCode('all');
+    setSearchQuery(''); 
+    // loadNews will be triggered by useEffect watching these state changes
+  };
+  
+  const handleSearchInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  };
+  
+  const handleSearchButtonClick = () => {
+    loadNews(); // Trigger news load immediately on button click
   };
 
   return (
-    <div className="space-y-8">
-      <header className="text-center py-8">
-        <h1 className="text-4xl font-headline font-bold text-primary">NewsWave Dashboard</h1>
-        <p className="text-lg text-muted-foreground mt-2">Your daily digest of world news.</p>
+    <div className="space-y-6 md:space-y-8">
+      <header className="text-center py-4 md:py-6">
+        {/* Title is in Navbar now, this can be a sub-header or removed */}
+        {/* <h1 className="text-4xl font-headline font-bold text-primary neu-brutal-header">NewsWave Dashboard</h1> */}
+        <p className="text-lg text-muted-foreground mt-1">Your daily digest of world news, with a Neubrutalist twist!</p>
       </header>
       
-      <Filters
-        categories={categories}
-        countries={countries}
-        selectedCategory={selectedCategory}
-        selectedCountry={selectedCountry}
-        onCategoryChange={setSelectedCategory}
-        onCountryChange={setSelectedCountry}
-        onClearFilters={handleClearFilters}
-      />
+      {/* Search and Filter Section - Neubrutal Styling */}
+      <div className="mb-8 neu-brutal bg-card p-4">
+        <div className="flex flex-wrap gap-3 md:gap-4 items-center">
+            <input 
+                type="text" 
+                value={searchQuery}
+                onChange={handleSearchInputChange}
+                placeholder="Search news..."
+                className="p-2 neu-brutal bg-background border-black flex-grow focus:ring-2 focus:ring-primary focus:outline-none"
+            />
+            <Filters
+              categories={categories}
+              countries={countries.map(c => ({ name: c.name, code: c.code }))} // Pass objects for Filters
+              selectedCategory={selectedCategory}
+              selectedCountryCode={selectedCountryCode}
+              onCategoryChange={setSelectedCategory}
+              onCountryChange={setSelectedCountryCode}
+              onClearFilters={handleClearFilters}
+              // Removed onSearchClick as search is triggered by input change or dedicated button
+            />
+             <Button 
+                onClick={handleSearchButtonClick} 
+                className="neu-brutal bg-newsmania-red text-black hover:bg-red-400 p-2 px-3 md:px-4 neu-brutal-hover neu-brutal-active"
+            >
+                <RefreshCw size={18} className="md:mr-1" /> Search
+            </Button>
+        </div>
+      </div>
+
 
       {apiKeyError && (
-        <Alert variant="destructive" className="mb-6">
-          <Terminal className="h-4 w-4" />
-          <AlertTitle>API Configuration Error</AlertTitle>
+        <Alert variant="destructive" className="mb-6 neu-brutal">
+          <AlertTriangle className="h-5 w-5" />
+          <AlertTitle className="font-bold">API Configuration Error!</AlertTitle>
           <AlertDescription>
-            {apiKeyError}
-            {apiKeyError.toLowerCase().includes("newsdata.io api key") && 
-              " Please ensure your NEWSDATA_API_KEY is correctly set in the .env file."}
-            {apiKeyError.toLowerCase().includes("mediastack api key") && 
-              " Please ensure your MEDIASTACK_KEY_... (e.g., MEDIASTACK_KEY_1) is correctly set in the .env file."}
-            {(apiKeyError.toLowerCase().includes("gnews api key") || apiKeyError.toLowerCase().includes("gnews api token")) && 
-              " Please ensure your GNEWS_API_KEY is correctly set in the .env file."}
-            {!apiKeyError.toLowerCase().includes("newsdata.io api key") && 
-             !apiKeyError.toLowerCase().includes("mediastack api key") && 
-             !(apiKeyError.toLowerCase().includes("gnews api key") || apiKeyError.toLowerCase().includes("gnews api token")) &&
-             (apiKeyError.toLowerCase().includes("api key") || apiKeyError.toLowerCase().includes("api token")) &&
-              " An API key seems to be missing or invalid. Please check your .env file for NEWSDATA_API_KEY, MEDIASTACK_KEY_..., or GNEWS_API_KEY."}
+            {apiKeyError} <br />
+            Please ensure the relevant API key (Mediastack, The Guardian, GNews, or Newsdata.io) is correctly set in your <code>.env</code> file.
           </AlertDescription>
         </Alert>
       )}
@@ -128,30 +167,24 @@ export default function DashboardPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
-             <Card key={index} className="flex flex-col md:flex-row overflow-hidden shadow-lg rounded-lg h-full">
-              {/* Skeleton for Image */}
-              {/* <Skeleton className="h-48 w-full md:w-48 lg:w-56 xl:w-64 md:h-auto flex-shrink-0" /> */}
-              {/* Skeleton for Content */}
-              <div className="flex flex-col flex-grow p-4 justify-between">
-                <div>
-                  <Skeleton className="h-6 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2 mb-1" />
-                  <Skeleton className="h-4 w-full mb-1" />
-                  <Skeleton className="h-4 w-full mb-1" />
-                  <Skeleton className="h-4 w-3/4 mb-3" />
+             <Card key={index} className="neu-brutal bg-card p-4 flex flex-col justify-between min-h-[200px]">
+                <Skeleton className="h-6 w-3/4 mb-2 bg-muted/50" />
+                <Skeleton className="h-4 w-1/2 mb-1 bg-muted/50" />
+                <Skeleton className="h-4 w-full mb-1 bg-muted/50" />
+                <Skeleton className="h-4 w-full mb-1 bg-muted/50" />
+                <Skeleton className="h-4 w-3/4 mb-3 bg-muted/50" />
+                <div className="flex justify-between items-center mt-auto pt-2 border-t border-muted-foreground/30">
+                  <Skeleton className="h-8 w-20 bg-muted/50" />
+                  <Skeleton className="h-8 w-20 bg-muted/50" />
                 </div>
-                <div className="flex justify-between items-center mt-auto pt-2 border-t">
-                  <Skeleton className="h-8 w-20" />
-                  <Skeleton className="h-8 w-20" />
-                </div>
-              </div>
             </Card>
           ))}
         </div>
       ) : articles.length === 0 && !apiKeyError ? (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-semibold text-muted-foreground">No articles found.</h2>
-            <p className="text-muted-foreground mt-2">Try adjusting your filters or check back later.</p>
+          <div className="neu-brutal bg-newsmania-yellow text-black p-6 md:p-8 text-center">
+            <AlertTriangle size={48} className="mx-auto mb-3" />
+            <h2 className="text-2xl font-bold">No news articles found.</h2>
+            <p className="mt-1">Try different search terms or filters!</p>
           </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -160,6 +193,8 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
+      {/* Basic Pagination - Can be enhanced */}
+      {/* Add pagination controls here if needed, styled with Neubrutalism */}
     </div>
   );
 }

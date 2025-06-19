@@ -1,7 +1,8 @@
+
 "use client";
 
 import Link from 'next/link';
-import { Newspaper, UserCircle, LogIn, LogOut, UserPlus } from 'lucide-react';
+import { Newspaper, UserCircle, LogIn, LogOut, UserPlus, UserCheck, Settings } from 'lucide-react'; // Added UserCheck, Settings
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -21,57 +22,57 @@ export default function Navbar() {
 
   const getInitials = (name?: string) => {
     if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    const parts = name.split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[parts.length -1][0]).toUpperCase();
+    }
+    return name.substring(0,2).toUpperCase();
   };
 
   return (
-    <header className="bg-card shadow-md sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors">
-          <Newspaper className="h-8 w-8" />
-          <h1 className="text-2xl font-headline font-semibold">NewsWave</h1>
+    // Updated header to use card styling for consistent Neubrutalism
+    <header className="bg-card shadow-md sticky top-0 z-50 py-3 border-b-3 border-black">
+      <div className="container mx-auto px-4 flex items-center justify-between flex-wrap gap-4">
+        <Link href="/" className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity">
+          {/* <Newspaper className="h-10 w-10 text-primary" /> */}
+          <h1 className="text-3xl md:text-4xl font-bold neu-brutal-header bg-newsmania-yellow text-black">
+            NewsMania
+          </h1>
         </Link>
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-2 md:gap-3">
           {loading ? (
-            <div className="h-10 w-24 bg-muted rounded-md animate-pulse"></div>
+            <div className="h-10 w-24 bg-muted rounded animate-pulse neu-brutal"></div>
           ) : user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={user.avatar || `https://placehold.co/40x40.png?text=${getInitials(user.name)}`} alt={user.name} data-ai-hint="user avatar" />
-                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                  </Avatar>
+            <div className="flex items-center gap-2 md:gap-3">
+                <span 
+                    className="neu-brutal bg-newsmania-green text-black p-2 px-3 md:px-4 flex items-center gap-2 text-sm md:text-base cursor-pointer neu-brutal-hover"
+                    onClick={() => router.push('/profile')}
+                >
+                    <UserCheck size={20} /> <span className="hidden sm:inline" >{user.name.split(' ')[0]}</span>
+                </span>
+                <Button 
+                    onClick={logout} 
+                    variant="default"
+                    className="neu-brutal bg-newsmania-red text-black hover:bg-red-400 p-2 px-3 md:px-4 neu-brutal-hover neu-brutal-active"
+                >
+                    <LogOut size={18} className="md:mr-1" /> <span className="hidden sm:inline">Logout</span>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push('/profile')}>
-                  <UserCircle className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            </div>
           ) : (
             <>
-              <Button variant="ghost" onClick={() => router.push('/login')}>
-                <LogIn className="mr-2 h-4 w-4" /> Login
+              <Button 
+                variant="default" 
+                onClick={() => router.push('/register')}
+                className="neu-brutal bg-newsmania-purple text-black hover:bg-purple-400 p-2 px-3 md:px-4 neu-brutal-hover neu-brutal-active"
+              >
+                <UserPlus size={18} className="md:mr-1" /> <span className="hidden sm:inline">Register</span>
               </Button>
-              <Button onClick={() => router.push('/register')}>
-                <UserPlus className="mr-2 h-4 w-4" /> Register
+              <Button 
+                variant="default" 
+                onClick={() => router.push('/login')}
+                className="neu-brutal bg-newsmania-blue text-black hover:bg-blue-400 p-2 px-3 md:px-4 neu-brutal-hover neu-brutal-active"
+              >
+                <LogIn size={18} className="md:mr-1" /> <span className="hidden sm:inline">Login</span>
               </Button>
             </>
           )}

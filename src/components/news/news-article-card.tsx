@@ -1,14 +1,14 @@
 
 "use client";
 
-import Image from 'next/image';
+// import Image from 'next/image'; // Image disabled for now
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Share2, CheckCircle, Clock, Globe, Tag } from 'lucide-react';
+import { Share2, CheckCircle, Tag, ExternalLink, ShieldQuestion, ShieldCheck } from 'lucide-react'; // Using Lucide icons
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
 import { formatDistanceToNow } from 'date-fns';
-import type { Article as NewsArticle } from '@/services/newsService'; // Ensure this matches definition
+import type { Article as NewsArticle } from '@/services/newsService';
 
 interface NewsArticleCardProps {
   article: NewsArticle;
@@ -17,11 +17,23 @@ interface NewsArticleCardProps {
 export default function NewsArticleCard({ article }: NewsArticleCardProps) {
   const { toast } = useToast();
   const { user, updateUser, incrementCategoryClick } = useAuth();
+  // For Neubrutalism, we might not always want verified status directly on the user object,
+  // but rather as a state managed per article in the UI if verification is transient.
+  // For now, let's assume `article.verified` might come from somewhere or is a UI state.
+  // This example will use a mock `isVerified` state for demonstration if article.verified is not present.
+  const [isVerified, setIsVerified] = React.useState(false); // Example local state
 
   const handleShare = () => {
+    if (!user) {
+      toast({ variant: "destructive", title: "Login Required", description: "Please log in to share articles." });
+      return;
+    }
     if (navigator.clipboard && article.url) {
       navigator.clipboard.writeText(article.url);
       toast({ title: "Link Copied!", description: "Article link copied to clipboard." });
+      // Increment share count - this logic should ideally be in AuthContext or a server action
+      // For demo, assume updateUser can handle adding to a share count if user model has it
+      // updateUser({ sharedCount: (user.sharedCount || 0) + 1 });
     } else {
       toast({ variant: "destructive", title: "Copy Failed", description: "Could not copy link." });
     }
@@ -32,13 +44,22 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
       toast({ variant: "destructive", title: "Login Required", description: "Please log in to verify articles." });
       return;
     }
-    // Ensure user.points is initialized if it's undefined
-    const currentPoints = user.points || 0;
-    updateUser({ points: currentPoints + 10 });
-    toast({ title: "Article Verified!", description: "You earned 10 points." });
+    // Toggle verification status (local example)
+    setIsVerified(!isVerified); 
+    if (!isVerified) { // If it's now verified
+      updateUser({ points: (user.points || 0) + 10 });
+      toast({ title: "Article Verified!", description: "You earned 10 points." });
+    } else { // If verification is removed
+       updateUser({ points: Math.max(0, (user.points || 0) - 10) }); // Deduct points, ensure not negative
+       toast({ title: "Verification Removed", description: "Points adjusted." });
+    }
   };
 
-  const handleCardClick = () => {
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent opening link if a button inside card was clicked
+    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a[target="_blank"]')) {
+      return;
+    }
     if (user && article.category) { 
       incrementCategoryClick(article.category);
     }
@@ -46,55 +67,83 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
       window.open(article.url, '_blank');
     }
   };
+  
+  const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png"; // Fallback for missing images
 
-  // const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png";
+  // Format date or show placeholder
+  let displayDate = 'Unknown date';
+  if (article.publishedAt) {
+    try {
+      displayDate = formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true });
+    } catch (e) {
+      console.warn("Could not parse date:", article.publishedAt);
+      // displayDate remains 'Unknown date' or could be article.publishedAt directly
+    }
+  }
 
   return (
-    // Card with flex layout: md:flex-row for side-by-side on medium screens and up, flex-col for stacked on small screens
-    <Card className="flex flex-col md:flex-row overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg h-full">
-      {/* Image Section - Temporarily Disabled
-      <div 
-        className="relative w-full md:w-48 lg:w-56 xl:w-64 h-48 md:h-auto flex-shrink-0 cursor-pointer" // md:h-auto ensures image height can grow with card if needed, flex-shrink-0 prevents image from shrinking
-        onClick={handleCardClick}
-      >
-        <Image 
-          src={displayImageUrl} 
-          alt={article.title} 
-          layout="fill" 
-          objectFit="cover" 
-          className="md:rounded-l-lg md:rounded-r-none rounded-t-lg" // Adjust rounding for side-by-side layout
-          data-ai-hint={article.aiHint || "news article"}
-        />
+    <Card 
+      className="neu-brutal bg-card text-card-foreground p-4 flex flex-col h-full cursor-pointer hover:shadow-neubrutal-hover active:shadow-neubrutal-active transition-all duration-100"
+      onClick={handleCardClick}
+    >
+      <div className="mb-3 flex flex-wrap gap-2">
+        <span className="bg-newsmania-purple text-black neu-brutal text-xs px-2 py-1 font-medium">
+          {article.category || 'General'}
+        </span>
+        <span className="bg-newsmania-blue text-black neu-brutal text-xs px-2 py-1 font-medium">
+          {article.source || 'Unknown Source'}
+        </span>
+        {isVerified ? (
+           <span className="bg-newsmania-green text-black neu-brutal text-xs px-2 py-1 font-medium flex items-center gap-1">
+             <ShieldCheck size={14} /> Verified
+           </span>
+        ) : (
+           <span className="bg-newsmania-yellow text-black neu-brutal text-xs px-2 py-1 font-medium flex items-center gap-1">
+             <ShieldQuestion size={14} /> Unverified
+           </span>
+        )}
       </div>
-      */}
-
-      {/* Content Section */}
-      {/* flex-grow allows this section to take remaining space, p-4 for padding, justify-between for vertical spacing */}
-      <div className="flex flex-col flex-grow p-4 justify-between">
-        <div>
-          <CardHeader className="p-0 cursor-pointer" onClick={handleCardClick}>
-            <CardTitle className="text-xl font-headline leading-tight hover:text-primary transition-colors">{article.title}</CardTitle>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground mt-2">
-              {article.publishedAt && <span className="flex items-center"><Clock size={12} className="mr-1" /> {formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })}</span>}
-              {article.category && <span className="flex items-center"><Tag size={12} className="mr-1" /> {article.category}</span>}
-              {article.country && <span className="flex items-center"><Globe size={12} className="mr-1" /> {article.country}</span>}
-            </div>
-          </CardHeader>
-          <CardContent className="flex-grow p-0 mt-3 cursor-pointer" onClick={handleCardClick}>
-            {/* line-clamp ensures summary doesn't overflow, adjust md:line-clamp-4 as needed */}
-            <CardDescription className="line-clamp-3 md:line-clamp-4">{article.summary}</CardDescription>
-          </CardContent>
+      
+      <CardHeader className="p-0 mb-2">
+        <CardTitle className="text-lg md:text-xl font-bold leading-tight line-clamp-3">{article.title}</CardTitle>
+      </CardHeader>
+      
+      <CardContent className="p-0 mb-3 flex-grow">
+        <CardDescription className="text-sm line-clamp-4">{article.summary}</CardDescription>
+      </CardContent>
+      
+      <CardFooter className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center mt-auto gap-3">
+        <span className="text-xs text-muted-foreground">{displayDate}</span>
+        <div className="flex gap-2 flex-wrap">
+          <Button 
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); handleVerify(); }}
+            className={`neu-brutal neu-brutal-hover neu-brutal-active px-3 py-1 text-xs font-semibold ${isVerified ? 'bg-newsmania-green text-black' : 'bg-newsmania-yellow text-black'}`}
+          >
+            {isVerified ? <ShieldCheck size={14} className="mr-1" /> : <ShieldQuestion size={14} className="mr-1" />}
+            {isVerified ? 'Verified' : 'Verify'}
+          </Button>
+          
+          <Button 
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); handleShare(); }}
+            className="neu-brutal bg-newsmania-blue text-black neu-brutal-hover neu-brutal-active px-3 py-1 text-xs font-semibold"
+            disabled={!article.url}
+          >
+            <Share2 size={14} className="mr-1" /> Share
+          </Button>
+          
+          <a 
+            href={article.url} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()} // Prevent card click
+            className="inline-flex items-center justify-center neu-brutal bg-newsmania-pink text-black neu-brutal-hover neu-brutal-active px-3 py-1 text-xs font-semibold rounded-md" // Added rounded-md for consistency with Button
+          >
+            Read <ExternalLink size={14} className="ml-1" />
+          </a>
         </div>
-        <CardFooter className="flex justify-between items-center p-0 mt-4 pt-4 border-t">
-          <Button variant="ghost" size="sm" onClick={handleShare} aria-label="Share article" disabled={!article.url}>
-            <Share2 className="mr-2 h-4 w-4" /> Share
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleVerify} aria-label="Verify article accuracy">
-            <CheckCircle className="mr-2 h-4 w-4" /> Verify
-          </Button>
-        </CardFooter>
-      </div>
+      </CardFooter>
     </Card>
   );
 }
-

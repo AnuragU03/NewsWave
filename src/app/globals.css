@@ -1,103 +1,142 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 196 27% 95%; /* #F0F4F5 */
-    --foreground: 222.2 84% 4.9%; /* Default dark text */
+    /* NewsMania Inspired Theme */
+    --background: 240 50% 97%; /* #f0f0f0 light grey */
+    --foreground: 0 0% 13%;    /* #212121 near black for text */
 
-    --card: 0 0% 100%; /* White cards */
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;       /* #ffffff white for cards */
+    --card-foreground: 0 0% 13%; /* #212121 */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 13%;
 
-    --primary: 189 31% 41%; /* #468189 */
-    --primary-foreground: 0 0% 100%; /* White for good contrast */
+    /* Neubrutalism Accent Palette */
+    /* Primary Action / Headers: Yellow */
+    --primary: 45 100% 60%; /* #FFD700 - A vibrant yellow like bg-yellow-300 */
+    --primary-foreground: 0 0% 13%; /* Black text on yellow for high contrast */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary actions / highlights: Purple */
+    --secondary: 270 60% 70%; /* #b19cd9 - A purple like bg-purple-300 */
+    --secondary-foreground: 0 0% 100%; /* White text on purple */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Accent / other interactions: Blue */
+    --accent: 210 70% 65%; /* #79a6dc - A blue like bg-blue-300 */
+    --accent-foreground: 0 0% 100%; /* White text on blue */
+    
+    /* Muted for less emphasis or borders if not black */
+    --muted: 220 10% 90%; /* #e1e1e6 */
+    --muted-foreground: 220 10% 40%; /* #5c5c66 */
 
-    --accent: 13 70% 62%; /* #E07A5F */
-    --accent-foreground: 0 0% 100%; /* White for good contrast on accent */
+    /* Destructive for errors: Red */
+    --destructive: 0 70% 60%; /* #e57373 - A red like bg-red-300 / bg-red-200 */
+    --destructive-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 0%; /* Black for Neubrutal borders */
+    --input: 240 10% 95%; /* Light grey for input backgrounds, distinct from main bg */
+    --ring: 45 100% 50%; /* Primary yellow for focus rings */
 
-    --border: 196 20% 85%; /* A slightly darker border for the light background */
-    --input: 196 20% 90%; /* Input background slightly different from main background */
-    --ring: 189 31% 41%; /* Primary color for focus rings */
+    --radius: 0.1rem; /* Neubrutalism often uses sharp corners or very slight radius */
 
-    --radius: 0.5rem;
+    --chart-1: hsl(var(--primary));
+    --chart-2: hsl(var(--accent));
+    --chart-3: 270 60% 70%; /* Purple */
+    --chart-4: 15 80% 60%; /* Orange-ish from HTML example (bg-orange-100 base) */
+    --chart-5: 120 40% 60%; /* Green-ish from HTML example (bg-green-100 base) */
 
-    --chart-1: 189 31% 41%;
-    --chart-2: 13 70% 62%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-
-    /* Sidebar specific theme */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 189 31% 41%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 13 70% 62%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 196 20% 85%;
-    --sidebar-ring: 189 31% 41%;
+    /* Sidebar specific theme (can be same as main for now) */
+    --sidebar-background: hsl(var(--card));
+    --sidebar-foreground: hsl(var(--card-foreground));
+    --sidebar-primary: hsl(var(--primary));
+    --sidebar-primary-foreground: hsl(var(--primary-foreground));
+    --sidebar-accent: hsl(var(--accent));
+    --sidebar-accent-foreground: hsl(var(--accent-foreground));
+    --sidebar-border: hsl(var(--border));
+    --sidebar-ring: hsl(var(--ring));
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Define dark theme if needed, or keep it similar if Neubrutalism style is consistent */
+    --background: 0 0% 10%;    /* Dark background */
+    --foreground: 0 0% 95%;    /* Light text */
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 15%;       /* Darker card */
+    --card-foreground: 0 0% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 189 31% 51%; /* Adjusted for dark mode */
-    --primary-foreground: 0 0% 100%;
+    --primary: 45 100% 60%; 
+    --primary-foreground: 0 0% 10%; 
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 270 60% 70%; 
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 210 70% 65%;
+    --accent-foreground: 0 0% 10%;
+    
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 70%;
 
-    --accent: 13 70% 72%; /* Adjusted for dark mode */
-    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 189 31% 51%;
+    --border: 0 0% 100%; /* White/light border for dark mode Neubrutal */
+    --input: 0 0% 20%; 
+    --ring: 45 100% 50%;
 
     /* Dark Sidebar specific theme */
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 189 31% 51%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 13 70% 72%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 189 31% 51%;
+    --sidebar-background: hsl(var(--card));
+    --sidebar-foreground: hsl(var(--card-foreground));
+    --sidebar-primary: hsl(var(--primary));
+    --sidebar-primary-foreground: hsl(var(--primary-foreground));
+    --sidebar-accent: hsl(var(--accent));
+    --sidebar-accent-foreground: hsl(var(--accent-foreground));
+    --sidebar-border: hsl(var(--border));
+    --sidebar-ring: hsl(var(--ring));
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border; /* Default border color will be black from :root */
   }
   body {
     @apply bg-background text-foreground font-body;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  /* Neubrutalist style for components */
+  .neu-brutal {
+    @apply border-[3px] border-black shadow-[4px_4px_0_0_black];
+    /* transition: all 0.1s ease-in-out; */ /* Transitions can sometimes soften Neubrutalism, use sparingly */
+  }
+  .neu-brutal-hover:hover {
+    @apply translate-x-[-1px] translate-y-[-1px] shadow-[5px_5px_0_0_black];
+  }
+  .neu-brutal-active:active {
+    @apply translate-x-[1px] translate-y-[1px] shadow-[2px_2px_0_0_black];
+  }
+   .neu-brutal-header {
+    @apply neu-brutal bg-primary text-primary-foreground p-3 md:p-4 inline-block;
+  }
+}
+
+/* Specific component overrides for Neubrutalism if needed */
+/* Example:
+.neu-button {
+  @apply neu-brutal p-2 px-4 neu-brutal-hover neu-brutal-active;
+}
+*/
+
+/* Loading Spin Animation */
+.loading-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

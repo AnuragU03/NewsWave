@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -10,8 +11,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        body: ['Space Grotesk', 'Inter', 'sans-serif'], // Added Space Grotesk
+        headline: ['Space Grotesk', 'Inter', 'sans-serif'], // Added Space Grotesk
         code: ['monospace'],
       },
       colors: {
@@ -45,7 +46,7 @@ export default {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
-        border: 'hsl(var(--border))',
+        border: 'hsl(var(--border))', // Should pick up black from globals.css
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         chart: {
@@ -65,11 +66,30 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        // Direct color mapping from NewsMania for easy use with Tailwind classes if needed
+        newsmania: {
+          yellow: '#FFD700', // Or match bg-yellow-300 from Tailwind: #FDE047
+          purple: '#b19cd9', // Or match bg-purple-300 from Tailwind: #D8B4FE
+          blue: '#79a6dc',   // Or match bg-blue-300 from Tailwind: #93C5FD
+          green: '#A7F3D0',  // bg-green-200
+          red: '#FECACA',    // bg-red-200
+          orange: '#FED7AA', // bg-orange-100
+          pink: '#FBCFE8',   // bg-pink-200
+        }
+      },
+      boxShadow: {
+        'neubrutal': '6px 6px 0 0 black',
+        'neubrutal-hover': '8px 8px 0 0 black',
+        'neubrutal-active': '3px 3px 0 0 black',
+      },
+      borderWidth: {
+        '3': '3px',
+        '4': '4px',
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        lg: 'var(--radius)', // default 0.1rem
+        md: 'calc(var(--radius) - 0px)', // Neubrutal often sharp
+        sm: 'calc(var(--radius) - 0px)', // Neubrutal often sharp
       },
       keyframes: {
         'accordion-down': {

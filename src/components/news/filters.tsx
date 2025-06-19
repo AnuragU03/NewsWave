@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -12,11 +13,11 @@ import { FilterX } from "lucide-react";
 
 interface FiltersProps {
   categories: string[];
-  countries: string[];
+  countries: Array<{ name: string; code: string }>; // Updated to accept objects
   selectedCategory: string;
-  selectedCountry: string;
+  selectedCountryCode: string; // Updated to selectedCountryCode
   onCategoryChange: (category: string) => void;
-  onCountryChange: (country: string) => void;
+  onCountryChange: (countryCode: string) => void; // Updated to countryCode
   onClearFilters: () => void;
 }
 
@@ -24,47 +25,50 @@ export default function Filters({
   categories,
   countries,
   selectedCategory,
-  selectedCountry,
+  selectedCountryCode,
   onCategoryChange,
   onCountryChange,
   onClearFilters,
 }: FiltersProps) {
   return (
-    <div className="mb-8 p-6 bg-card rounded-xl shadow-md flex flex-col md:flex-row gap-4 items-center">
-      <h3 className="text-lg font-semibold text-foreground mr-4 hidden md:block">Filter News</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-row gap-4 w-full md:w-auto">
-        <Select value={selectedCategory} onValueChange={onCategoryChange}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Select Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    // Removed outer container as it's now part of page.tsx structure
+    // Styles are applied directly to Select and Button for Neubrutalism
+    <>
+      <Select value={selectedCategory} onValueChange={onCategoryChange}>
+        <SelectTrigger className="neu-brutal bg-newsmania-green text-black border-black w-full md:w-[180px] focus:ring-primary">
+          <SelectValue placeholder="Category" />
+        </SelectTrigger>
+        <SelectContent className="neu-brutal border-black bg-card">
+          <SelectItem value="all" className="hover:bg-newsmania-green/50 focus:bg-newsmania-green/50">All Categories</SelectItem>
+          {categories.map((category) => (
+            <SelectItem key={category} value={category.toLowerCase()} className="hover:bg-newsmania-green/50 focus:bg-newsmania-green/50">
+              {category}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-        <Select value={selectedCountry} onValueChange={onCountryChange}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Select Country" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Countries</SelectItem>
-            {countries.map((country) => (
-              <SelectItem key={country} value={country}>
-                {country}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <Button variant="outline" onClick={onClearFilters} className="w-full md:w-auto">
-          <FilterX className="mr-2 h-4 w-4" /> Clear Filters
-        </Button>
-      </div>
-    </div>
+      <Select value={selectedCountryCode} onValueChange={onCountryChange}>
+        <SelectTrigger className="neu-brutal bg-newsmania-orange text-black border-black w-full md:w-[180px] focus:ring-primary">
+          <SelectValue placeholder="Country" />
+        </SelectTrigger>
+        <SelectContent className="neu-brutal border-black bg-card">
+          {/* <SelectItem value="all" className="hover:bg-newsmania-orange/50 focus:bg-newsmania-orange/50">All Countries</SelectItem> */}
+          {countries.map((country) => (
+            <SelectItem key={country.code} value={country.code} className="hover:bg-newsmania-orange/50 focus:bg-newsmania-orange/50">
+              {country.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      
+      <Button 
+        variant="outline" 
+        onClick={onClearFilters} 
+        className="neu-brutal bg-card border-black text-black hover:bg-muted w-full md:w-auto neu-brutal-hover neu-brutal-active"
+      >
+        <FilterX className="mr-2 h-4 w-4" /> Clear
+      </Button>
+    </>
   );
 }
