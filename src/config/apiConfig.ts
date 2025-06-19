@@ -1,38 +1,63 @@
 
 // config/apiConfig.ts
+
+// Helper function to create the keys array
+function getApiKeys(envVar: string | undefined, placeholder: string): string[] {
+  if (envVar && envVar !== placeholder && envVar.length > 5) { // Basic length check
+    return [envVar];
+  }
+  return [];
+}
+
+// Helper function for multiple keys
+function getMultipleApiKeys(envVars: (string | undefined)[], placeholders: string[]): string[] {
+  const validKeys: string[] = [];
+  envVars.forEach((key, index) => {
+    const placeholder = placeholders[index] || `YOUR_KEY_${index + 1}`; // Fallback placeholder
+    if (key && key !== placeholder && key.length > 5) {
+      validKeys.push(key);
+    }
+  });
+  return validKeys;
+}
+
+
 export const apiConfig = {
   news: {
     mediastack: {
-      keys: [
-        process.env.MEDIASTACK_KEY_1!,
-        process.env.MEDIASTACK_KEY_2!,
-        process.env.MEDIASTACK_KEY_3!,
-      ].filter(key => key !== undefined && key !== "YOUR_MEDIASTACK_KEY_1" && key !== "YOUR_MEDIASTACK_KEY_2" && key !== "YOUR_MEDIASTACK_KEY_3" && key?.length > 20),
+      keys: getMultipleApiKeys(
+        [
+          process.env.MEDIASTACK_KEY_1,
+          process.env.MEDIASTACK_KEY_2,
+          process.env.MEDIASTACK_KEY_3,
+        ],
+        [
+          "YOUR_MEDIASTACK_KEY_1",
+          "YOUR_MEDIASTACK_KEY_2",
+          "YOUR_MEDIASTACK_KEY_3",
+        ]
+      ),
       baseUrl: 'https://api.mediastack.com/v1',
-      rateLimit: 1000, // requests per month (check free tier, was 500/month)
-      priority: 1, // Highest priority
+      rateLimit: 1000,
+      priority: 1,
     },
     guardian: {
-      keys: [process.env.GUARDIAN_KEY_1!].filter(key => key !== undefined && key !== "YOUR_GUARDIAN_KEY_1" && key?.length > 20),
+      keys: getApiKeys(process.env.GUARDIAN_KEY_1, "YOUR_GUARDIAN_KEY_1"),
       baseUrl: 'https://content.guardianapis.com',
-      rateLimit: 5000, // requests per day
-      priority: 2, // Second priority
+      rateLimit: 5000,
+      priority: 2,
     },
     gnews: {
-      keys: [
-        process.env.GNEWS_API_KEY!,
-      ].filter(key => key !== undefined && key !== "YOUR_GNEWS_API_KEY" && key?.length > 20),
+      keys: getApiKeys(process.env.GNEWS_API_KEY, "YOUR_GNEWS_API_KEY"),
       baseUrl: 'https://gnews.io/api/v4',
-      rateLimit: 100, // requests per day (free tier)
-      priority: 3, // Third priority
+      rateLimit: 100,
+      priority: 3,
     },
     newsdata: {
-      keys: [
-        process.env.NEWSDATA_API_KEY!,
-      ].filter(key => key !== undefined && key !== "YOUR_NEWSDATA_API_KEY_HERE" && key.length > 20),
+      keys: getApiKeys(process.env.NEWSDATA_API_KEY, "YOUR_NEWSDATA_API_KEY_HERE"),
       baseUrl: 'https://newsdata.io/api/1',
-      rateLimit: 500, // Example, adjust based on your plan (requests per day for free tier)
-      priority: 4, // Fourth priority
+      rateLimit: 500,
+      priority: 4,
     },
   },
   ai: {
