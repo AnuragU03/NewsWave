@@ -17,7 +17,8 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      // Common news image hostnames - you may need to add more
+      // Newsdata.io images can come from various sources. These are common ones.
+      // You may need to add more as you discover them from image_url fields.
       { protocol: 'https', hostname: '**.reuters.com' },
       { protocol: 'https', hostname: '**.ft.com' },
       { protocol: 'https', hostname: '**.wsj.com' },
@@ -33,7 +34,12 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '**.apnews.com' },
       { protocol: 'https', hostname: '**.techcrunch.com' },
       { protocol: 'https', hostname: '**.theverge.com' },
-      // Add other hostnames NewsAPI might return for urlToImage
+      { protocol: 'https', hostname: 'img.etimg.com' }, // Example for Economic Times (India)
+      { protocol: 'https', hostname: 'images.indianexpress.com' },
+      { protocol: 'https', hostname: 'www.aljazeera.com' },
+      // Generic pattern for newsdata.io itself if they ever proxy images, unlikely but safe.
+      { protocol: 'https', hostname: 'cdn.newsdata.io' }, 
+      // Add other hostnames Newsdata.io might return for image_url
     ],
   },
 };

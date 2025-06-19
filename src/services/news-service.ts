@@ -3,109 +3,124 @@
 
 import type { NewsArticle } from '@/components/news/news-article-card';
 
-const API_BASE_URL = 'https://newsapi.org/v2/top-headlines';
+const API_BASE_URL = 'https://newsdata.io/api/1/news';
 
-interface NewsApiArticle {
-  source: {
-    id: string | null;
-    name: string;
-  };
-  author: string | null;
+interface NewsDataIOResult {
+  article_id: string;
   title: string;
+  link: string;
+  keywords: string[] | null;
+  creator: string[] | null;
+  video_url: string | null;
   description: string | null;
-  url: string;
-  urlToImage: string | null;
-  publishedAt: string;
   content: string | null;
+  pubDate: string; // "2023-05-20 09:00:00"
+  image_url: string | null;
+  source_id: string;
+  source_priority: number;
+  country: string[];
+  category: string[];
+  language: string;
 }
 
-interface NewsApiResponse {
-  status: string;
-  totalResults: number;
-  articles: NewsApiArticle[];
-  code?: string; // For error messages
-  message?: string; // For error messages
+interface NewsDataIOResponse {
+  status: string; // "success" or "error"
+  totalResults?: number;
+  results?: NewsDataIOResult[];
+  nextPage?: string;
+  // For errors:
+  code?: string;
+  message?: string; // This might be nested under a 'results' object for errors
 }
+
 
 // Helper to generate a simple aiHint from category or title
 function generateAiHint(category: string, title: string): string {
-  if (category && category.toLowerCase() !== 'general') {
+  if (category && category.toLowerCase() !== 'general' && category.toLowerCase() !== 'top') {
     return category.toLowerCase();
   }
-  // Fallback to first two words of title if short enough
   const titleWords = title.split(' ').slice(0, 2);
   if (titleWords.length > 0) {
     return titleWords.join(' ').toLowerCase();
   }
-  return "news media"; // generic fallback
+  return "news media"; 
 }
 
 
 export async function fetchNews(
-  categoryQuery: string | null,
-  countryQuery: string | null,
+  categoryQuery: string | null, // e.g., "technology", "sports", "general" (will be mapped to "top")
+  countryQuery: string | null, // e.g., "us", "gb", or null for global
   displayCategory: string, // Category for UI display
   displayCountry: string // Country for UI display
 ): Promise<NewsArticle[]> {
-  const apiKey = process.env.NEWS_API_KEY;
+  const apiKey = process.env.NEWSDATA_API_KEY;
 
-  if (!apiKey || apiKey === "YOUR_NEWS_API_KEY_HERE") {
-    console.error('News API key is missing or not configured.');
-    throw new Error('News API key is not configured. Please add it to your .env file.');
+  if (!apiKey || apiKey === "YOUR_NEWSDATA_API_KEY_HERE" || apiKey.length < 20) { // Basic check for placeholder
+    console.error('Newsdata.io API key is missing or not configured.');
+    throw new Error('Newsdata.io API key is not configured. Please add NEWSDATA_API_KEY to your .env file.');
   }
 
   const params = new URLSearchParams({
-    apiKey: apiKey,
-    pageSize: '21', // Fetch a bit more for variety
+    apikey: apiKey,
+    image: '1', // Request images
+    // language: 'en', // Default is 'en', can be specified if needed
   });
 
-  if (categoryQuery) {
-    params.append('category', categoryQuery);
+  let newsdataCategoryParam = categoryQuery;
+  if (categoryQuery && categoryQuery.toLowerCase() === 'general') {
+    newsdataCategoryParam = 'top'; // Map "general" from UI to "top" for Newsdata.io
+  } else if (!categoryQuery) {
+    newsdataCategoryParam = 'top'; // Default to 'top' if no category specified (e.g. "All Categories")
   }
+
+  if (newsdataCategoryParam) {
+    params.append('category', newsdataCategoryParam);
+  }
+
   if (countryQuery) {
     params.append('country', countryQuery);
   }
-
-  // If no specific category or country, default to general news in US (or API default)
-  if (!categoryQuery && !countryQuery) {
-    params.append('category', 'general'); 
-  }
-
+  
+  // Newsdata.io requires 'q', 'country', 'category', or 'domain'. 
+  // We ensure 'category' is always present (defaults to 'top').
 
   try {
     const response = await fetch(`${API_BASE_URL}?${params.toString()}`);
-    if (!response.ok) {
-      const errorData: NewsApiResponse = await response.json();
-      console.error('News API request failed:', response.status, errorData.message);
-      throw new Error(`Failed to fetch news: ${errorData.message || response.statusText}`);
-    }
+    const data: NewsDataIOResponse = await response.json();
 
-    const data: NewsApiResponse = await response.json();
-
-    if (data.status === 'error') {
-      console.error('News API error:', data.message);
-      throw new Error(`News API error: ${data.message}`);
+    if (!response.ok || data.status === 'error') {
+      let errorMessage = `Failed to fetch news. Status: ${response.status}`;
+      if (data.results && typeof data.results === 'object' && 'message' in data.results) {
+         // Newsdata.io sometimes nests error message in results for status: "error"
+        errorMessage = `Newsdata.io API error: ${(data.results as { message: string }).message}`;
+      } else if (data.message) {
+        errorMessage = `Newsdata.io API error: ${data.message}`;
+      }
+      console.error('Newsdata.io API request failed:', errorMessage, data);
+      throw new Error(errorMessage);
     }
     
-    return data.articles.map((article, index) => ({
-      id: article.url || `${article.title}-${index}`, // Use URL as ID, or fallback
+    if (!data.results || data.results.length === 0) {
+      return [];
+    }
+
+    return data.results.slice(0, 21).map((article) => ({ // Limit to 21 articles for consistency
+      id: article.article_id || article.link,
       title: article.title || 'No title available',
       summary: article.description || article.content || 'No summary available',
-      imageUrl: article.urlToImage || `https://placehold.co/600x400.png`,
-      source: article.source.name || 'Unknown source',
-      category: displayCategory, // Use the category name passed for display
-      country: displayCountry, // Use the country name passed for display
-      publishedAt: article.publishedAt,
-      url: article.url,
+      imageUrl: article.image_url || `https://placehold.co/600x400.png`,
+      source: article.source_id || 'Unknown source',
+      category: displayCategory, 
+      country: displayCountry, 
+      publishedAt: article.pubDate, // Assuming pubDate is in a parseable format
+      url: article.link,
       aiHint: generateAiHint(displayCategory, article.title || ""),
     }));
   } catch (error) {
-    console.error('Error fetching news:', error);
-    // In case of error, return an empty array or rethrow as per requirement
-    // For now, rethrowing to let the UI handle it.
+    console.error('Error fetching news from Newsdata.io:', error);
     if (error instanceof Error) {
         throw error;
     }
-    throw new Error('An unknown error occurred while fetching news.');
+    throw new Error('An unknown error occurred while fetching news from Newsdata.io.');
   }
 }

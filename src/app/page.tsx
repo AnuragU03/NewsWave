@@ -5,19 +5,21 @@ import { useState, useEffect, useCallback } from 'react';
 import NewsArticleCard, { type NewsArticle } from '@/components/news/news-article-card';
 import Filters from '@/components/news/filters';
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchNews } from '@/services/news-service'; // Import the new service
+import { fetchNews } from '@/services/news-service'; 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 
-const categories = ["Technology", "Business", "Sports", "Health", "Science", "Entertainment", "General"];
-const countries = ["USA", "UK", "Canada", "Global", "Brazil"]; // Global will mean no specific country filter
+const categories = ["Technology", "Business", "Sports", "Health", "Science", "Entertainment", "General", "Politics", "Food", "Travel"]; // Added more Newsdata.io relevant cats
+const countries = ["USA", "UK", "Canada", "Global", "Brazil", "Australia", "India"]; // Added more countries
 
 const countryCodeMap: { [key: string]: string | null } = {
   "USA": "us",
   "UK": "gb",
   "Canada": "ca",
   "Brazil": "br",
-  "Global": null, // Omit country parameter for global
+  "Australia": "au",
+  "India": "in",
+  "Global": null, 
 };
 
 export default function DashboardPage() {
@@ -31,9 +33,11 @@ export default function DashboardPage() {
     setIsLoading(true);
     setApiKeyError(null);
 
-    let apiCategory: string | null = selectedCategory.toLowerCase();
+    // apiCategory will be lowercase category name or 'general' if 'all' or 'General' is selected.
+    // This 'general' will be mapped to 'top' by the news-service for Newsdata.io.
+    let apiCategory: string = selectedCategory.toLowerCase();
     if (selectedCategory === 'all' || selectedCategory === 'General') {
-      apiCategory = 'general'; // NewsAPI uses 'general' for broad news
+      apiCategory = 'general'; 
     }
     
     let apiCountryCode: string | null = null;
@@ -41,16 +45,14 @@ export default function DashboardPage() {
       apiCountryCode = countryCodeMap[selectedCountry];
     }
 
-    // Determine display category/country for cards
     const displayCategoryForCard = selectedCategory === 'all' ? 'General' : selectedCategory;
     const displayCountryForCard = selectedCountry === 'all' ? 'Global' : selectedCountry;
 
     try {
-      // If 'all' categories and 'all' countries are selected, provide a default query.
-      // NewsAPI requires at least one of q, sources, category, or country (for top-headlines).
-      // We'll default to 'general' category if nothing else is specified.
-      const categoryToFetch = (selectedCategory === 'all' && selectedCountry === 'all') ? 'general' : apiCategory;
-      const countryToFetch = selectedCountry === 'all' ? null : apiCountryCode;
+      // The news-service will handle mapping 'general' to 'top' if needed,
+      // and will default to 'top' if apiCategory is effectively null/all.
+      const categoryToFetch = apiCategory; 
+      const countryToFetch = apiCountryCode;
 
       const fetchedArticles = await fetchNews(categoryToFetch, countryToFetch, displayCategoryForCard, displayCountryForCard);
       setArticles(fetchedArticles);
@@ -59,9 +61,9 @@ export default function DashboardPage() {
       if (error instanceof Error && error.message.includes('API key')) {
         setApiKeyError(error.message);
       } else {
-        setApiKeyError("Could not load news. Please try again later.");
+         setApiKeyError(error instanceof Error ? error.message : "Could not load news. Please try again later.");
       }
-      setArticles([]); // Clear articles on error
+      setArticles([]); 
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +102,7 @@ export default function DashboardPage() {
           <AlertDescription>
             {apiKeyError}
             {apiKeyError.includes("API key") && 
-              " Please ensure your NEWS_API_KEY is correctly set in the .env file."}
+              " Please ensure your NEWSDATA_API_KEY is correctly set in the .env file."}
           </AlertDescription>
         </Alert>
       )}
