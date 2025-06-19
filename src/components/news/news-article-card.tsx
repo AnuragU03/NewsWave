@@ -11,21 +11,6 @@ import { useAuth } from '@/contexts/auth-context';
 import { formatDistanceToNow } from 'date-fns';
 import type { Article as NewsArticle } from '@/services/newsService'; // Import the Article type
 
-// The 'Article' type from newsService is now used directly as NewsArticle here.
-// Ensure its properties match what's expected by this component.
-// export interface NewsArticle { // This local interface is no longer needed if types are aligned
-//   id: string;
-//   title: string;
-//   summary: string;
-//   imageUrl: string;
-//   source: string;
-//   category: string;
-//   country: string;
-//   publishedAt: string;
-//   url: string;
-//   aiHint?: string; 
-// }
-
 interface NewsArticleCardProps {
   article: NewsArticle; // Use the imported Article type
 }
@@ -56,12 +41,12 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
     window.open(article.url, '_blank');
   };
 
-  const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png";
+  // const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png";
 
 
   return (
-    <Card className="flex flex-col md:flex-row overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg h-full">
-      {/* Image Section */}
+    <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg h-full">
+      {/* Image Section - Temporarily removed
       <div 
         className="relative w-full md:w-48 lg:w-56 xl:w-64 h-48 md:h-auto flex-shrink-0 cursor-pointer"
         onClick={handleCardClick}
@@ -75,6 +60,7 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
           data-ai-hint={article.aiHint || "news article"}
         />
       </div>
+      */}
 
       {/* Content Section */}
       <div className="flex flex-col flex-grow p-4 justify-between">
