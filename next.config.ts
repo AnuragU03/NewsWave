@@ -42,6 +42,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'pxcdn.meridiano.net' },
       { protocol: 'https', hostname: 's-aicmscdn.nhipsongkinhdoanh.vn' },
       { protocol: 'https', hostname: 'vesti.az' },
+      { protocol: 'https', hostname: 'keralakaumudi.com' },
       // Generic pattern for newsdata.io itself if they ever proxy images, unlikely but safe.
       { protocol: 'https', hostname: 'cdn.newsdata.io' }, 
       // Add other hostnames Newsdata.io might return for image_url
