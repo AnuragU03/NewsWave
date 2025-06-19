@@ -4,15 +4,14 @@
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge"; // Badge not currently used
 import { Share2, CheckCircle, Clock, Globe, Tag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
 import { formatDistanceToNow } from 'date-fns';
-import type { Article as NewsArticle } from '@/services/newsService'; // Import the Article type
+import type { Article as NewsArticle } from '@/services/newsService';
 
 interface NewsArticleCardProps {
-  article: NewsArticle; // Use the imported Article type
+  article: NewsArticle;
 }
 
 export default function NewsArticleCard({ article }: NewsArticleCardProps) {
@@ -29,24 +28,22 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
       toast({ variant: "destructive", title: "Login Required", description: "Please log in to verify articles." });
       return;
     }
-    // Simulate verification
     updateUser({ points: (user.points || 0) + 10 });
     toast({ title: "Article Verified!", description: "You earned 10 points." });
   };
 
   const handleCardClick = () => {
-    if (user && article.category) { // Ensure category exists
+    if (user && article.category) { 
       incrementCategoryClick(article.category);
     }
     window.open(article.url, '_blank');
   };
 
-  // const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png";
-
+  const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png";
 
   return (
-    <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg h-full">
-      {/* Image Section - Temporarily removed
+    <Card className="flex flex-col md:flex-row overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg h-full">
+      {/* Image Section */}
       <div 
         className="relative w-full md:w-48 lg:w-56 xl:w-64 h-48 md:h-auto flex-shrink-0 cursor-pointer"
         onClick={handleCardClick}
@@ -60,7 +57,6 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
           data-ai-hint={article.aiHint || "news article"}
         />
       </div>
-      */}
 
       {/* Content Section */}
       <div className="flex flex-col flex-grow p-4 justify-between">

@@ -3,17 +3,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import NewsArticleCard from '@/components/news/news-article-card';
-import type { Article as NewsArticle } from '@/services/newsService'; // Use the new Article type
+import type { Article as NewsArticle } from '@/services/newsService';
 import Filters from '@/components/news/filters';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/card'; // Added import
 import { fetchNewsArticles } from '@/actions/newsActions';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 
 const categories = ["Technology", "Business", "Sports", "Health", "Science", "Entertainment", "General", "Politics", "Food", "Travel"];
-const countries = ["USA", "UK", "Canada", "Global", "Brazil", "Australia", "India", "Germany", "France", "Japan", "China"]; // Added more
+const countries = ["USA", "UK", "Canada", "Global", "Brazil", "Australia", "India", "Germany", "France", "Japan", "China"]; 
 
-// Country codes for Newsdata.io and Mediastack (generally common 2-letter ISO)
+// Country codes for APIs (generally common 2-letter ISO)
 const countryCodeMap: { [key: string]: string | null } = {
   "USA": "us",
   "UK": "gb",
@@ -41,16 +42,15 @@ export default function DashboardPage() {
 
     let apiCategoryQuery: string | null = selectedCategory.toLowerCase();
     if (selectedCategory === 'all') {
-      apiCategoryQuery = 'general'; // Default to 'general' for "All Categories" for APIs
+      apiCategoryQuery = 'general'; 
     }
     
     let apiCountryCode: string | null = null;
     if (selectedCountry !== 'all' && countryCodeMap[selectedCountry] !== undefined) {
       apiCountryCode = countryCodeMap[selectedCountry];
     } else if (selectedCountry === 'all') {
-      apiCountryCode = null; // Explicitly null for global/all countries
+      apiCountryCode = null; 
     }
-
 
     const displayCategoryForCard = selectedCategory === 'all' ? 'General' : selectedCategory;
     const displayCountryForCard = selectedCountry === 'all' ? 'Global' : selectedCountry;
@@ -60,7 +60,7 @@ export default function DashboardPage() {
       setArticles(fetchedArticles);
     } catch (error) {
       console.error("Failed to fetch news articles:", error);
-      if (error instanceof Error && error.message.toLowerCase().includes('api key')) {
+      if (error instanceof Error && (error.message.toLowerCase().includes('api key') || error.message.toLowerCase().includes('api token'))) {
         setApiKeyError(error.message); 
       } else {
          setApiKeyError(error instanceof Error ? error.message : "Could not load news. Please try again later.");
@@ -107,8 +107,13 @@ export default function DashboardPage() {
               " Please ensure your NEWSDATA_API_KEY is correctly set in the .env file."}
             {apiKeyError.toLowerCase().includes("mediastack api key") && 
               " Please ensure your MEDIASTACK_KEY_... (e.g., MEDIASTACK_KEY_1) is correctly set in the .env file."}
-            {!apiKeyError.toLowerCase().includes("newsdata.io api key") && !apiKeyError.toLowerCase().includes("mediastack api key") && apiKeyError.toLowerCase().includes("api key") &&
-              " Please ensure your API keys (e.g., NEWSDATA_API_KEY, MEDIASTACK_KEY_1) are correctly set in the .env file."}
+            {apiKeyError.toLowerCase().includes("gnews api key") || apiKeyError.toLowerCase().includes("gnews api token") && 
+              " Please ensure your GNEWS_API_KEY is correctly set in the .env file."}
+            {!apiKeyError.toLowerCase().includes("newsdata.io api key") && 
+             !apiKeyError.toLowerCase().includes("mediastack api key") && 
+             !apiKeyError.toLowerCase().includes("gnews api key") && !apiKeyError.toLowerCase().includes("gnews api token") &&
+             (apiKeyError.toLowerCase().includes("api key") || apiKeyError.toLowerCase().includes("api token")) &&
+              " An API key seems to be missing or invalid. Please check your .env file for NEWSDATA_API_KEY, MEDIASTACK_KEY_..., or GNEWS_API_KEY."}
           </AlertDescription>
         </Alert>
       )}
@@ -116,15 +121,20 @@ export default function DashboardPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="bg-card p-4 rounded-lg shadow-md space-y-3">
+             <Card key={index} className="flex flex-col md:flex-row overflow-hidden shadow-lg rounded-lg h-full">
               <Skeleton className="h-48 w-full md:w-48 lg:w-56 xl:w-64 md:h-auto flex-shrink-0" />
-              <div className="flex-grow space-y-2">
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
+              <div className="flex flex-col flex-grow p-4 justify-between">
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2 mb-1" />
+                <Skeleton className="h-4 w-full mb-1" />
+                <Skeleton className="h-4 w-full mb-1" />
+                <Skeleton className="h-4 w-3/4 mb-3" />
+                <div className="flex justify-between items-center mt-auto pt-2 border-t">
+                  <Skeleton className="h-8 w-20" />
+                  <Skeleton className="h-8 w-20" />
+                </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       ) : articles.length === 0 && !apiKeyError ? (
