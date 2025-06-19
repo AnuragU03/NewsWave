@@ -6,15 +6,15 @@ import NewsArticleCard from '@/components/news/news-article-card';
 import type { Article as NewsArticle } from '@/services/newsService';
 import Filters from '@/components/news/filters';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card } from '@/components/ui/card'; // Added import
+import { Card } from '@/components/ui/card';
 import { fetchNewsArticles } from '@/actions/newsActions';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
+import { useAuth } from '@/contexts/auth-context'; // Import useAuth
 
 const categories = ["Technology", "Business", "Sports", "Health", "Science", "Entertainment", "General", "Politics", "Food", "Travel"];
 const countries = ["USA", "UK", "Canada", "Global", "Brazil", "Australia", "India", "Germany", "France", "Japan", "China"]; 
 
-// Country codes for APIs (generally common 2-letter ISO)
 const countryCodeMap: { [key: string]: string | null } = {
   "USA": "us",
   "UK": "gb",
@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [selectedCategory, setSelectedCategory] = useState('all'); 
   const [selectedCountry, setSelectedCountry] = useState('all'); 
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+  const { user } = useAuth(); // Get user from AuthContext
 
   const loadNews = useCallback(async () => {
     setIsLoading(true);
@@ -56,11 +57,17 @@ export default function DashboardPage() {
     const displayCountryForCard = selectedCountry === 'all' ? 'Global' : selectedCountry;
 
     try {
-      const fetchedArticles = await fetchNewsArticles(apiCategoryQuery, apiCountryCode, displayCategoryForCard, displayCountryForCard);
+      const fetchedArticles = await fetchNewsArticles(
+        apiCategoryQuery, 
+        apiCountryCode, 
+        displayCategoryForCard, 
+        displayCountryForCard,
+        user?.categoryClicks // Pass user's category clicks
+      );
       setArticles(fetchedArticles);
     } catch (error) {
       console.error("Failed to fetch news articles:", error);
-      if (error instanceof Error && (error.message.toLowerCase().includes('api key') || error.message.toLowerCase().includes('api token'))) {
+      if (error instanceof Error && (error.message.toLowerCase().includes('api key') || error.message.toLowerCase().includes('api token') || error.message.toLowerCase().includes('configured or available'))) {
         setApiKeyError(error.message); 
       } else {
          setApiKeyError(error instanceof Error ? error.message : "Could not load news. Please try again later.");
@@ -69,7 +76,7 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedCategory, selectedCountry]);
+  }, [selectedCategory, selectedCountry, user]); // Add user to dependencies
 
   useEffect(() => {
     loadNews();
@@ -107,11 +114,11 @@ export default function DashboardPage() {
               " Please ensure your NEWSDATA_API_KEY is correctly set in the .env file."}
             {apiKeyError.toLowerCase().includes("mediastack api key") && 
               " Please ensure your MEDIASTACK_KEY_... (e.g., MEDIASTACK_KEY_1) is correctly set in the .env file."}
-            {apiKeyError.toLowerCase().includes("gnews api key") || apiKeyError.toLowerCase().includes("gnews api token") && 
+            {(apiKeyError.toLowerCase().includes("gnews api key") || apiKeyError.toLowerCase().includes("gnews api token")) && 
               " Please ensure your GNEWS_API_KEY is correctly set in the .env file."}
             {!apiKeyError.toLowerCase().includes("newsdata.io api key") && 
              !apiKeyError.toLowerCase().includes("mediastack api key") && 
-             !apiKeyError.toLowerCase().includes("gnews api key") && !apiKeyError.toLowerCase().includes("gnews api token") &&
+             !(apiKeyError.toLowerCase().includes("gnews api key") || apiKeyError.toLowerCase().includes("gnews api token")) &&
              (apiKeyError.toLowerCase().includes("api key") || apiKeyError.toLowerCase().includes("api token")) &&
               " An API key seems to be missing or invalid. Please check your .env file for NEWSDATA_API_KEY, MEDIASTACK_KEY_..., or GNEWS_API_KEY."}
           </AlertDescription>
@@ -122,13 +129,17 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
              <Card key={index} className="flex flex-col md:flex-row overflow-hidden shadow-lg rounded-lg h-full">
-              <Skeleton className="h-48 w-full md:w-48 lg:w-56 xl:w-64 md:h-auto flex-shrink-0" />
+              {/* Skeleton for Image */}
+              {/* <Skeleton className="h-48 w-full md:w-48 lg:w-56 xl:w-64 md:h-auto flex-shrink-0" /> */}
+              {/* Skeleton for Content */}
               <div className="flex flex-col flex-grow p-4 justify-between">
-                <Skeleton className="h-6 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2 mb-1" />
-                <Skeleton className="h-4 w-full mb-1" />
-                <Skeleton className="h-4 w-full mb-1" />
-                <Skeleton className="h-4 w-3/4 mb-3" />
+                <div>
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2 mb-1" />
+                  <Skeleton className="h-4 w-full mb-1" />
+                  <Skeleton className="h-4 w-full mb-1" />
+                  <Skeleton className="h-4 w-3/4 mb-3" />
+                </div>
                 <div className="flex justify-between items-center mt-auto pt-2 border-t">
                   <Skeleton className="h-8 w-20" />
                   <Skeleton className="h-8 w-20" />

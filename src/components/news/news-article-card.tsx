@@ -8,7 +8,7 @@ import { Share2, CheckCircle, Clock, Globe, Tag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
 import { formatDistanceToNow } from 'date-fns';
-import type { Article as NewsArticle } from '@/services/newsService';
+import type { Article as NewsArticle } from '@/services/newsService'; // Ensure this matches definition
 
 interface NewsArticleCardProps {
   article: NewsArticle;
@@ -32,7 +32,9 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
       toast({ variant: "destructive", title: "Login Required", description: "Please log in to verify articles." });
       return;
     }
-    updateUser({ points: (user.points || 0) + 10 });
+    // Ensure user.points is initialized if it's undefined
+    const currentPoints = user.points || 0;
+    updateUser({ points: currentPoints + 10 });
     toast({ title: "Article Verified!", description: "You earned 10 points." });
   };
 
@@ -45,13 +47,14 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
     }
   };
 
-  const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png";
+  // const displayImageUrl = article.imageUrl || "https://placehold.co/600x400.png";
 
   return (
+    // Card with flex layout: md:flex-row for side-by-side on medium screens and up, flex-col for stacked on small screens
     <Card className="flex flex-col md:flex-row overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg h-full">
       {/* Image Section - Temporarily Disabled
       <div 
-        className="relative w-full md:w-48 lg:w-56 xl:w-64 h-48 md:h-auto flex-shrink-0 cursor-pointer"
+        className="relative w-full md:w-48 lg:w-56 xl:w-64 h-48 md:h-auto flex-shrink-0 cursor-pointer" // md:h-auto ensures image height can grow with card if needed, flex-shrink-0 prevents image from shrinking
         onClick={handleCardClick}
       >
         <Image 
@@ -59,13 +62,14 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
           alt={article.title} 
           layout="fill" 
           objectFit="cover" 
-          className="md:rounded-l-lg md:rounded-r-none rounded-t-lg"
+          className="md:rounded-l-lg md:rounded-r-none rounded-t-lg" // Adjust rounding for side-by-side layout
           data-ai-hint={article.aiHint || "news article"}
         />
       </div>
       */}
 
       {/* Content Section */}
+      {/* flex-grow allows this section to take remaining space, p-4 for padding, justify-between for vertical spacing */}
       <div className="flex flex-col flex-grow p-4 justify-between">
         <div>
           <CardHeader className="p-0 cursor-pointer" onClick={handleCardClick}>
@@ -77,6 +81,7 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
             </div>
           </CardHeader>
           <CardContent className="flex-grow p-0 mt-3 cursor-pointer" onClick={handleCardClick}>
+            {/* line-clamp ensures summary doesn't overflow, adjust md:line-clamp-4 as needed */}
             <CardDescription className="line-clamp-3 md:line-clamp-4">{article.summary}</CardDescription>
           </CardContent>
         </div>
@@ -92,3 +97,4 @@ export default function NewsArticleCard({ article }: NewsArticleCardProps) {
     </Card>
   );
 }
+
