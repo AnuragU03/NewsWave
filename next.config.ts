@@ -45,6 +45,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'vesti.az' },
       { protocol: 'https', hostname: 'keralakaumudi.com' },
       { protocol: 'https', hostname: 'media.losandes.com.ar' },
+      { protocol: 'https', hostname: 'cassette.sphdigital.com.sg' },
     ],
   },
 };
