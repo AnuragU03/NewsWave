@@ -1,14 +1,26 @@
-# Firebase Studio
+# NewsWave
 
-This is a NextJS starter in Firebase Studio.
+NewsWave is a modern web application built with Next.js that provides users with a personalized news reading experience. It leverages AI to prioritize and categorize news articles, ensuring users see the most relevant content. The project integrates with Firebase for user authentication and potentially other backend services.
 
-To get started, take a look at src/app/page.tsx.
+## Features
 
-## Running in VS Code
+- User authentication (Login, Register, Protected Routes)
+- Personalized news feed
+- AI-powered news prioritization and categorization
+- Responsive design
+- Profile management
+- Reward system (potentially, based on available components)
 
-1. Make sure you have Node.js installed.
-2. Open the project in VS Code.
-3. Open the integrated terminal (Terminal > New Terminal).
-4. Run `npm install` to install dependencies.
-5. Run `npm run dev` to start the development server.
-6. Open your browser to `http://localhost:3000`.
+## Technologies Used
+
+- **Frontend:** Next.js, React, TypeScript
+- **Styling:** Tailwind CSS
+- **UI Components:** Shadcn UI
+- **AI/Backend:** Genkit, Google AI
+- **Authentication/Backend:** Firebase
+- **Data Fetching:** Likely through custom services (e.g., `src/services/newsService.ts`)
+- **Other Libraries:** Zod for validation, React Hook Form for forms, date-fns for date manipulation, Recharts for charting (if implemented).
+
+## Installation
+
+1. **Clone the repository:**
